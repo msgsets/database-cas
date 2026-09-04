@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Pin, StickyNote, X } from "lucide-react";
+import { useRouterState } from "@tanstack/react-router";
 import { useState, type KeyboardEvent } from "react";
 import { createNote, listNotes, updateNote } from "@/lib/notes-api";
 import { notePreview, noteTitle, type Note } from "@/lib/clip-types";
@@ -11,61 +12,65 @@ import { cn } from "@/lib/utils";
 export function QuickNotes() {
   const open = useNotesUi((state) => state.open);
   const setOpen = useNotesUi((state) => state.setOpen);
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
+  const onHome = pathname === "/";
 
   return (
     <>
-      <aside className="sticky top-24 hidden h-[calc(100dvh-7.5rem)] w-[300px] shrink-0 lg:flex">
+      <aside className="sticky top-24 hidden h-[calc(100dvh-7.5rem)] min-w-[280px] flex-1 lg:flex">
         <NotesPanel />
       </aside>
 
-      <div className="lg:hidden">
-        <button
-          type="button"
-          onClick={() => setOpen(true)}
-          className="fixed right-4 bottom-5 z-40 flex size-14 items-center justify-center rounded-full bg-fg text-bg shadow-float transition-transform duration-150 ease-smooth-out hover:scale-[1.03] active:scale-[0.96]"
-          aria-label="打开随手记"
-        >
-          <StickyNote className="size-5" strokeWidth={1.75} />
-        </button>
-
-        <div className={cn("fixed inset-0 z-50", open ? "pointer-events-auto" : "pointer-events-none")}>
+      {onHome ? null : (
+        <div className="lg:hidden">
           <button
             type="button"
-            aria-label="关闭随手记"
-            onClick={() => setOpen(false)}
-            className={cn(
-              "absolute inset-0 bg-fg/30 transition-opacity duration-200",
-              open ? "opacity-100" : "opacity-0",
-            )}
-          />
-          <div
-            className={cn(
-              "absolute inset-x-0 bottom-0 flex max-h-[85dvh] flex-col rounded-t-2xl bg-bg shadow-float transition-transform duration-300 ease-smooth-out",
-              open ? "translate-y-0" : "translate-y-full",
-            )}
+            onClick={() => setOpen(true)}
+            className="fixed right-4 bottom-5 z-40 flex size-14 items-center justify-center rounded-full bg-fg text-bg shadow-float transition-transform duration-150 ease-smooth-out hover:scale-[1.03] active:scale-[0.96]"
+            aria-label="打开随手记"
           >
-            <div className="relative flex items-center justify-center px-4 pt-3">
-              <span className="h-1 w-10 rounded-full bg-fill-2" />
-              <button
-                type="button"
-                onClick={() => setOpen(false)}
-                className="absolute top-2 right-3 flex size-11 items-center justify-center rounded-full text-muted hover:bg-fill"
-                aria-label="关闭"
-              >
-                <X className="size-5" />
-              </button>
-            </div>
-            <div className="min-h-[420px] overflow-hidden px-4 pb-[env(safe-area-inset-bottom)]">
-              {open ? <NotesPanel /> : null}
+            <StickyNote className="size-5" strokeWidth={1.75} />
+          </button>
+
+          <div className={cn("fixed inset-0 z-50", open ? "pointer-events-auto" : "pointer-events-none")}>
+            <button
+              type="button"
+              aria-label="关闭随手记"
+              onClick={() => setOpen(false)}
+              className={cn(
+                "absolute inset-0 bg-fg/30 transition-opacity duration-200",
+                open ? "opacity-100" : "opacity-0",
+              )}
+            />
+            <div
+              className={cn(
+                "absolute inset-x-0 bottom-0 flex max-h-[85dvh] flex-col rounded-t-2xl bg-bg shadow-float transition-transform duration-300 ease-smooth-out",
+                open ? "translate-y-0" : "translate-y-full",
+              )}
+            >
+              <div className="relative flex items-center justify-center px-4 pt-3">
+                <span className="h-1 w-10 rounded-full bg-fill-2" />
+                <button
+                  type="button"
+                  onClick={() => setOpen(false)}
+                  className="absolute top-2 right-3 flex size-11 items-center justify-center rounded-full text-muted hover:bg-fill"
+                  aria-label="关闭"
+                >
+                  <X className="size-5" />
+                </button>
+              </div>
+              <div className="min-h-[420px] overflow-hidden px-4 pb-[env(safe-area-inset-bottom)]">
+                {open ? <NotesPanel /> : null}
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
     </>
   );
 }
 
-function NotesPanel() {
+export function NotesPanel({ compact = false }: { compact?: boolean }) {
   const qc = useQueryClient();
   const notesQuery = useQuery({ queryKey: ["notes"], queryFn: () => listNotes() });
   const notes = notesQuery.data ?? [];
@@ -103,7 +108,7 @@ function NotesPanel() {
   }
 
   return (
-    <div className="flex h-full min-h-[420px] flex-col gap-3">
+    <div className={cn("flex w-full flex-col gap-3", compact ? "" : "h-full min-h-[420px]")}>
       <div className="relative shrink-0 rounded-2xl bg-surface shadow-card">
         <textarea
           value={draft}
@@ -111,12 +116,17 @@ function NotesPanel() {
           onKeyDown={onKeyDown}
           placeholder="在想什么？"
           aria-label="随手记"
-          rows={4}
-          className="min-h-[128px] w-full resize-none rounded-2xl bg-transparent px-4 py-3.5 text-[15px] leading-relaxed text-fg outline-none placeholder:text-subtle"
+          rows={compact ? 3 : 4}
+          className="min-h-[112px] w-full resize-none rounded-2xl bg-transparent px-4 py-3.5 text-[15px] leading-relaxed text-fg outline-none placeholder:text-subtle"
         />
       </div>
 
-      <div className="min-h-0 flex-1 overflow-y-auto rounded-2xl bg-fill px-1.5 py-2">
+      <div
+        className={cn(
+          "overflow-y-auto rounded-2xl bg-fill px-1.5 py-2",
+          compact ? "max-h-52" : "min-h-0 flex-1",
+        )}
+      >
         {pinned.length ? (
           <ul className="space-y-0.5">
             {pinned.map((note) => (
@@ -154,7 +164,7 @@ function NoteRow({ note, onPin }: { note: Note; onPin: () => void }) {
         onClick={onPin}
         className={cn(
           "mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full transition-colors",
-          note.pinned ? "text-fg" : "text-subtle opacity-0 group-hover:opacity-100 hover:text-fg",
+          note.pinned ? "text-fg" : "text-subtle lg:opacity-0 lg:group-hover:opacity-100 hover:text-fg",
         )}
         aria-label={note.pinned ? "取消固定" : "固定"}
       >
