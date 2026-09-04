@@ -5,9 +5,9 @@ export function Input({ className, ...props }: InputHTMLAttributes<HTMLInputElem
   return (
     <input
       className={cn(
-        "h-11 w-full rounded-xl bg-fill px-4 text-base text-fg outline-none placeholder:text-subtle",
-        "transition-[box-shadow,background-color] duration-150 ease-smooth-out",
-        "focus:bg-surface focus:shadow-[0_0_0_4px_rgba(0,113,227,0.18)]",
+        "h-11 w-full rounded-xl bg-fill px-4 text-body text-fg outline-none placeholder:text-subtle",
+        "transition-[box-shadow,background-color] duration-150",
+        "focus:bg-surface focus:shadow-[0_0_0_4px_rgb(0_113_227_/_0.18)]",
         className,
       )}
       {...props}

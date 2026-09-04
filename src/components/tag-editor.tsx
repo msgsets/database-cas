@@ -51,7 +51,6 @@ export function TagEditor({ clip }: { clip: Clip }) {
 
   return (
     <div className="space-y-3">
-      <h3 className="text-sm font-medium text-muted">标签</h3>
       <div className="flex flex-wrap gap-2">
         {(tagsQuery.data ?? clip.tags).map((tag) => {
           const isOn = assigned.has(tag.id);
@@ -63,7 +62,7 @@ export function TagEditor({ clip }: { clip: Clip }) {
                 isOn ? remove.mutate(tag.id) : add.mutate(tag.name)
               }
               className={cn(
-                "inline-flex h-9 items-center gap-1 rounded-full px-3 text-sm font-medium transition-colors duration-150",
+                "inline-flex h-9 items-center gap-1 rounded-full px-3 text-sm font-medium transition-colors duration-100",
                 isOn
                   ? "bg-fg text-bg"
                   : "bg-fill text-muted hover:bg-fill-2 hover:text-fg",
@@ -75,13 +74,13 @@ export function TagEditor({ clip }: { clip: Clip }) {
           );
         })}
       </div>
-      <form onSubmit={onSubmit} className="flex gap-2">
+      <form onSubmit={onSubmit}>
         <input
           value={name}
           onChange={(event) => setName(event.target.value)}
           placeholder="写一个新标签，回车保存"
           maxLength={20}
-          className="h-11 min-w-0 flex-1 rounded-xl bg-fill px-4 text-base text-fg outline-none placeholder:text-subtle focus:bg-surface focus:shadow-[0_0_0_4px_rgba(0,113,227,0.18)]"
+          className="h-11 w-full rounded-xl bg-fill px-4 text-base text-fg outline-none placeholder:text-subtle focus:bg-surface focus:shadow-[0_0_0_4px_rgb(0_113_227_/_0.18)]"
         />
       </form>
     </div>

@@ -10,12 +10,13 @@ export const Route = createRootRoute({
   head: () => ({
     meta: [
       { charSet: "utf-8" },
-      { name: "viewport", content: "width=device-width, initial-scale=1" },
+      { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
       { title: APP_NAME },
       { name: "theme-color", content: "#f5f5f7" },
+      { name: "apple-mobile-web-app-capable", content: "yes" },
       {
         name: "description",
-        content: "Folio",
+        content: "把值得留下的，先收进来。",
       },
     ],
     links: [

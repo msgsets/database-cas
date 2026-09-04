@@ -3,13 +3,13 @@ import { TriangleAlert } from "lucide-react";
 
 export function AppErrorComponent({ error }: ErrorComponentProps) {
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center gap-3 bg-bg px-6 text-center text-fg">
+    <main className="flex min-h-dvh flex-col items-center justify-center gap-3 bg-bg px-6 text-center text-fg">
       <span className="text-danger" aria-hidden="true">
-        <TriangleAlert className="size-10" strokeWidth={1.75} />
+        <TriangleAlert className="size-8" strokeWidth={1.75} />
       </span>
-      <h1 className="text-lg font-semibold tracking-tight">出了点问题</h1>
-      <p className="max-w-md text-sm break-words text-muted">
-        {error.message || "发生了意外错误，请刷新后再试。"}
+      <h1 className="title-3">出了点问题</h1>
+      <p className="max-w-md text-subhead leading-relaxed break-words text-muted">
+        {error.message || "发生了意外错误，请再试一次。"}
       </p>
     </main>
   );

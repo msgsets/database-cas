@@ -26,6 +26,17 @@ function mapNote(row: NoteRow): Note {
   };
 }
 
+export const getNote = createServerFn({ method: "GET" })
+  .validator((input: { id: number }) => input)
+  .handler(async ({ data }) => {
+    const sql = await getSql();
+    const rows = await sql.query<NoteRow>(
+      `select id, body, pinned, created_at, updated_at from notes where id = $1`,
+      [data.id],
+    );
+    return rows[0] ? mapNote(rows[0]) : null;
+  });
+
 export const listNotes = createServerFn({ method: "GET" }).handler(async () => {
   const sql = await getSql();
   const rows = await sql.query<NoteRow>(
@@ -35,6 +46,7 @@ export const listNotes = createServerFn({ method: "GET" }).handler(async () => {
   );
   return rows.map(mapNote);
 });
+
 
 export const createNote = createServerFn({ method: "POST" })
   .validator((input: { body: string }) => input)

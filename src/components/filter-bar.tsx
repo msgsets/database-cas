@@ -2,8 +2,10 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Search } from "lucide-react";
-import { useEffect, useState, type FormEvent, type ReactNode } from "react";
+import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { toast } from "sonner";
+import { TypeIcon } from "@/components/type-badge";
+import { Input } from "@/components/ui/input";
 import { createTag, listTags } from "@/lib/clips-api";
 import {
   CLIP_TYPES,
@@ -11,10 +13,9 @@ import {
   TIME_FILTERS,
   TIME_FILTER_LABEL,
   type LibrarySearch,
+  type TimeFilter,
 } from "@/lib/clip-types";
 import { cn } from "@/lib/utils";
-import { TypeIcon } from "@/components/type-badge";
-import { Input } from "@/components/ui/input";
 
 type FilterBarProps = {
   search: LibrarySearch;
@@ -34,7 +35,7 @@ export function FilterBar({ search, onChange }: FilterBarProps) {
   useEffect(() => {
     const timer = setTimeout(() => {
       if (q !== search.q) onChange({ q });
-    }, 250);
+    }, 120);
     return () => clearTimeout(timer);
   }, [q, search.q, onChange]);
 
@@ -59,7 +60,7 @@ export function FilterBar({ search, onChange }: FilterBarProps) {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       <div className="relative">
         <Search className="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-subtle" />
         <Input
@@ -72,23 +73,14 @@ export function FilterBar({ search, onChange }: FilterBarProps) {
       </div>
 
       <FilterRow label="时间">
-        <div className="inline-flex max-w-full overflow-x-auto rounded-full bg-fill p-1">
-          {TIME_FILTERS.map((time) => (
-            <button
-              key={time}
-              type="button"
-              onClick={() => onChange({ time })}
-              className={cn(
-                "h-9 shrink-0 rounded-full px-3.5 text-sm font-medium transition-colors duration-150",
-                search.time === time
-                  ? "bg-surface text-fg shadow-sm"
-                  : "text-muted hover:text-fg",
-              )}
-            >
-              {TIME_FILTER_LABEL[time]}
-            </button>
-          ))}
-        </div>
+        <Segmented
+          value={search.time}
+          options={TIME_FILTERS.map((time) => ({
+            value: time,
+            label: TIME_FILTER_LABEL[time],
+          }))}
+          onChange={(time) => onChange({ time })}
+        />
       </FilterRow>
 
       <FilterRow label="类型">
@@ -134,9 +126,9 @@ export function FilterBar({ search, onChange }: FilterBarProps) {
             <input
               value={tagName}
               onChange={(event) => setTagName(event.target.value)}
-              placeholder="写标签，回车保存"
+              placeholder="新标签"
               maxLength={20}
-              className="h-9 w-[148px] rounded-full bg-fill px-3 text-sm text-fg outline-none placeholder:text-subtle focus:bg-surface focus:shadow-[0_0_0_4px_rgba(0,113,227,0.18)]"
+              className="h-9 w-[120px] rounded-full bg-fill px-3 text-sm text-fg outline-none placeholder:text-subtle focus:bg-surface focus:shadow-[0_0_0_4px_rgb(0_113_227_/_0.18)]"
             />
           </form>
         </div>
@@ -154,7 +146,7 @@ function FilterRow({
 }) {
   return (
     <div className="space-y-2">
-      <p className="text-xs font-medium tracking-wide text-subtle">{label}</p>
+      <p className="text-caption font-medium tracking-wide text-subtle">{label}</p>
       {children}
     </div>
   );
@@ -174,11 +166,66 @@ function Chip({
       type="button"
       onClick={onClick}
       className={cn(
-        "inline-flex h-9 items-center gap-1.5 rounded-full px-3 text-sm font-medium transition-colors duration-150",
+        "inline-flex h-9 items-center gap-1.5 rounded-full px-3 text-sm font-medium transition-colors duration-100",
         active ? "bg-fg text-bg" : "bg-fill text-muted hover:bg-fill-2 hover:text-fg",
       )}
     >
       {children}
     </button>
+  );
+}
+
+function Segmented({
+  value,
+  options,
+  onChange,
+}: {
+  value: TimeFilter;
+  options: { value: TimeFilter; label: string }[];
+  onChange: (value: TimeFilter) => void;
+}) {
+  const refs = useRef<Record<string, HTMLButtonElement | null>>({});
+  const [pill, setPill] = useState({ left: 4, width: 0 });
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    const el = refs.current[value];
+    if (!el) return;
+    const parent = el.parentElement;
+    if (!parent) return;
+    const parentBox = parent.getBoundingClientRect();
+    const box = el.getBoundingClientRect();
+    setPill({ left: box.left - parentBox.left, width: box.width });
+    requestAnimationFrame(() => setReady(true));
+  }, [value]);
+
+  return (
+    <div className="relative inline-flex max-w-full overflow-x-auto rounded-full bg-fill p-1">
+      <span
+        aria-hidden
+        className="absolute top-1 bottom-1 rounded-full bg-surface shadow-sm"
+        style={{
+          width: pill.width,
+          transform: `translateX(${pill.left}px)`,
+          transition: ready ? "transform 250ms var(--ease-out-apple), width 250ms var(--ease-out-apple)" : "none",
+        }}
+      />
+      {options.map((option) => (
+        <button
+          key={option.value}
+          type="button"
+          ref={(node) => {
+            refs.current[option.value] = node;
+          }}
+          onClick={() => onChange(option.value)}
+          className={cn(
+            "relative z-10 h-9 shrink-0 rounded-full px-3.5 text-sm font-medium transition-colors duration-150",
+            value === option.value ? "text-fg" : "text-muted hover:text-fg",
+          )}
+        >
+          {option.label}
+        </button>
+      ))}
+    </div>
   );
 }

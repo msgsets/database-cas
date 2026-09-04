@@ -25,7 +25,12 @@ export function TypeIcon({
   className?: string;
 }) {
   const Icon = ICONS[type];
-  return <Icon className={cn("size-4", type === "video" && "ml-px", className)} strokeWidth={1.75} />;
+  return (
+    <Icon
+      className={cn("size-4", type === "video" && "ml-px", className)}
+      strokeWidth={1.75}
+    />
+  );
 }
 
 export function TypeBadge({
@@ -38,7 +43,7 @@ export function TypeBadge({
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-full bg-fill px-2.5 py-1 text-xs font-medium text-muted",
+        "inline-flex items-center gap-1.5 rounded-full bg-fill px-2.5 py-1 text-caption font-medium tracking-wide text-muted",
         className,
       )}
     >

@@ -23,8 +23,8 @@ export function Providers({ children }: { children: ReactNode }) {
         toastOptions={{
           classNames: {
             toast:
-              "bg-surface text-fg shadow-float border-0 rounded-xl font-sans text-[15px]",
-            title: "text-fg",
+              "material text-fg shadow-float border-0 rounded-xl font-sans text-[15px]",
+            title: "text-fg font-medium",
             description: "text-muted",
           },
         }}

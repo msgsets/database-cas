@@ -48,10 +48,10 @@ function LibraryPage() {
 
   return (
     <AppShell>
-      <main className="w-full min-w-0 pb-28 lg:pb-12">
+      <main className="mx-auto w-full max-w-5xl min-w-0">
         <header className="mb-6">
-          <h1 className="text-3xl font-semibold tracking-tight text-fg">资料库</h1>
-          <p className="mt-1 text-sm text-muted">
+          <h1 className="font-en large-title">DATABASE</h1>
+          <p className="mt-2 text-subhead text-muted">
             {clipsQuery.isPending ? "…" : `${total} 条`}
             {search.q ? ` · “${search.q}”` : ""}
           </p>
@@ -75,7 +75,7 @@ function LibraryPage() {
           </div>
         ) : (
           <div className="rounded-2xl bg-surface px-6 py-16 text-center shadow-card">
-            <p className="text-sm text-muted">没有匹配的内容</p>
+            <p className="text-subhead text-muted">没有匹配的内容</p>
           </div>
         )}
       </main>

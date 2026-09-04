@@ -5,8 +5,6 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { AppShell } from "@/components/app-shell";
 import { CaptureCard } from "@/components/capture-card";
 import { ClipCard } from "@/components/clip-card";
-import { NotesPanel } from "@/components/quick-notes";
-import { SearchEntry } from "@/components/search-entry";
 import { listClips } from "@/lib/clips-api";
 import { DEFAULT_LIBRARY_SEARCH } from "@/lib/clip-types";
 
@@ -23,24 +21,21 @@ function Home() {
     initialData: initial,
   });
 
+  const items = recent.data?.items ?? [];
+
   return (
     <AppShell>
-      <main className="w-full min-w-0 pb-10">
-        <div className="space-y-4">
-          <CaptureCard />
-          <div className="lg:hidden">
-            <NotesPanel compact />
-          </div>
-          <SearchEntry />
-        </div>
+      <main className="mx-auto w-full max-w-3xl min-w-0">
+        <h1 className="font-en large-title mb-6">HOME</h1>
 
-        <section className="rise-in rise-in-4 mt-10">
-          <div className="mb-4 flex items-baseline justify-between">
-            <h2 className="text-[15px] font-medium text-muted">最近</h2>
+        <CaptureCard />
+
+        <section className="mt-10">
+          <div className="mb-4 flex justify-end">
             <Link
               to="/library"
               search={DEFAULT_LIBRARY_SEARCH}
-              className="text-sm font-medium text-fg"
+              className="font-en text-[15px] text-primary"
             >
               DATABASE
             </Link>
@@ -50,14 +45,14 @@ function Home() {
               <div className="h-48 rounded-2xl bg-fill" />
               <div className="h-48 rounded-2xl bg-fill" />
             </div>
-          ) : recent.data?.items.length ? (
+          ) : items.length ? (
             <div className="grid gap-4 sm:grid-cols-2">
-              {recent.data.items.slice(0, 4).map((clip) => (
+              {items.slice(0, 4).map((clip) => (
                 <ClipCard key={clip.id} clip={clip} />
               ))}
             </div>
           ) : (
-            <p className="px-1 py-8 text-sm text-muted">还没有内容</p>
+            <p className="px-1 py-10 text-subhead text-muted">还没有内容</p>
           )}
         </section>
       </main>

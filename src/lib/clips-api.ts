@@ -166,6 +166,30 @@ export const getClip = createServerFn({ method: "GET" })
   .validator((input: { id: number }) => input)
   .handler(async ({ data }) => loadClip(data.id));
 
+export const readSource = createServerFn({ method: "GET" })
+  .validator((input: { id: number }) => input)
+  .handler(async ({ data }) => {
+    const clip = await loadClip(data.id);
+    if (!clip) return { ok: false as const, error: "未找到" };
+    if (clip.kind !== "url" || !clip.url || clip.type === "video" || clip.type === "image") {
+      return { ok: true as const, clip };
+    }
+    const existing = clip.content ?? "";
+    if (existing.length > 1500) return { ok: true as const, clip };
+    const { fetchArticle } = await import("./parse-input.server");
+    const article = await fetchArticle(clip.url);
+    if (!article || article.content.length <= existing.length) {
+      return { ok: true as const, clip };
+    }
+    const sql = await getSql();
+    await sql.query(
+      `update clips set content = $1, excerpt = coalesce(nullif($2, ''), excerpt) where id = $3`,
+      [article.content, article.excerpt ?? "", clip.id],
+    );
+    const next = await loadClip(clip.id);
+    return { ok: true as const, clip: next ?? clip };
+  });
+
 export const captureInput = createServerFn({ method: "POST" })
   .validator((input: { input: string }) => input)
   .handler(async ({ data }) => {

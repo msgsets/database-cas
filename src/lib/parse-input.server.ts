@@ -183,14 +183,25 @@ async function parseUrl(url: URL): Promise<ParsedClip> {
     const ogType = metaContent(html, ["og:type"]);
     const image = absolutize(url, ogImage) || youtubeThumb(url);
     const type = detectTypeFromUrl(url, ogType);
+    const article = type === "video" || type === "image" ? "" : extractArticle(html);
+    const body =
+      article.length > 160
+        ? article
+        : description
+          ? description.slice(0, 4000)
+          : "";
 
     return {
       kind: "url",
-      type: type === "link" && description && description.length > 80 ? "article" : type,
+      type: type === "link" && body.length > 80 ? "article" : type,
       url: url.toString(),
       title: title.slice(0, 200),
-      excerpt: description ? description.slice(0, 400) : null,
-      content: description ? description.slice(0, 4000) : null,
+      excerpt: description
+        ? description.slice(0, 400)
+        : body
+          ? body.slice(0, 180)
+          : null,
+      content: body ? body.slice(0, 20_000) : null,
       site_name: siteName.slice(0, 120),
       image_url: image,
     };
@@ -231,16 +242,16 @@ function absolutize(base: URL, value: string | null): string | null {
 
 function decodeHtml(value: string): string {
   return value
-    .replace(/&/g, "&")
-    .replace(/</g, "<")
-    .replace(/>/g, ">")
-    .replace(/"/g, '"')
-    .replace(/&#39;/g, "'")
     .replace(/&nbsp;/g, " ")
     .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(Number(n)))
     .replace(/&#x([0-9a-f]+);/gi, (_, n) =>
       String.fromCharCode(parseInt(n, 16)),
-    );
+    )
+    .replace(/&quot;/g, "\u0022")
+    .replace(/&#39;|&apos;/g, "\u0027")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&amp;/g, "&");
 }
 
 function stripTags(html: string): string {
@@ -252,6 +263,54 @@ function stripTags(html: string): string {
       .replace(/\s+/g, " ")
       .trim(),
   );
+}
+
+function isBoilerplate(text: string) {
+  if (text.length > 160) return false;
+  return /cookie|privacy policy|订阅|登录|注册|copyright|accept all|同意并继续/i.test(
+    text,
+  );
+}
+
+export function extractArticle(html: string): string {
+  const cleaned = html
+    .replace(/<script[\s\S]*?<\/script>/gi, " ")
+    .replace(/<style[\s\S]*?<\/style>/gi, " ")
+    .replace(/<noscript[\s\S]*?<\/noscript>/gi, " ")
+    .replace(/<!--[\s\S]*?-->/g, " ");
+
+  const article =
+    cleaned.match(/<article\b[^>]*>([\s\S]*?)<\/article>/i)?.[1] ||
+    cleaned.match(/<main\b[^>]*>([\s\S]*?)<\/main>/i)?.[1] ||
+    cleaned;
+
+  const blocks: string[] = [];
+  const re = /<(p|h1|h2|h3|h4|li|blockquote)(\s[^>]*)?>([\s\S]*?)<\/\1>/gi;
+  let match: RegExpExecArray | null;
+  while ((match = re.exec(article))) {
+    const tag = match[1].toLowerCase();
+    const text = stripTags(match[3]).trim();
+    if (text.length < 2) continue;
+    if (isBoilerplate(text)) continue;
+    if (text.length < 28 && !tag.startsWith("h")) continue;
+    blocks.push(text);
+    if (blocks.join("\n\n").length > 18_000) break;
+  }
+  return blocks.join("\n\n").slice(0, 20_000);
+}
+
+export async function fetchArticle(
+  urlString: string,
+): Promise<{ content: string; excerpt: string | null } | null> {
+  try {
+    const url = new URL(urlString);
+    if (url.protocol !== "http:" && url.protocol !== "https:") return null;
+    const parsed = await parseUrl(url);
+    if (!parsed.content) return null;
+    return { content: parsed.content, excerpt: parsed.excerpt };
+  } catch {
+    return null;
+  }
 }
 
 async function titleFromText(text: string): Promise<string> {

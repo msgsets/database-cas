@@ -1,6 +1,7 @@
 "use client";
 
 import { Link } from "@tanstack/react-router";
+import { Play } from "lucide-react";
 import { useState } from "react";
 import type { Clip } from "@/lib/clip-types";
 import { relativeTime } from "@/lib/format";
@@ -18,28 +19,34 @@ export function ClipCard({ clip }: { clip: Clip }) {
       params={{ id: String(clip.id) }}
       className={cn(
         "group flex flex-col overflow-hidden rounded-2xl bg-surface shadow-card",
-        "transition-[box-shadow,transform] duration-200 ease-smooth-out",
-        "hover:shadow-card-hover active:scale-[0.99]",
+        "pressable",
       )}
     >
       {showImage ? (
-        <div className="relative aspect-[16/9] overflow-hidden bg-fill">
+        <div className="relative aspect-[16/10] overflow-hidden bg-fill">
           <img
             src={image ?? undefined}
             alt=""
-            className="size-full object-cover transition-transform duration-300 ease-smooth-out group-hover:scale-[1.02]"
+            className="size-full object-cover"
             onError={() => setBroken(true)}
           />
+          {clip.type === "video" ? (
+            <span className="absolute inset-0 flex items-center justify-center">
+              <span className="flex size-12 items-center justify-center rounded-full bg-fg/72 text-bg backdrop-blur-sm">
+                <Play className="size-5 ml-0.5" fill="currentColor" />
+              </span>
+            </span>
+          ) : null}
         </div>
       ) : null}
-      <div className="flex flex-1 flex-col gap-3 p-4">
+      <div className="flex flex-1 flex-col gap-2.5 p-4">
         <div className="flex items-center justify-between gap-3">
           <TypeBadge type={clip.type} />
-          <span className="text-xs tabular-nums text-subtle">
+          <span className="text-caption tabular-nums tracking-wide text-subtle">
             {relativeTime(clip.created_at)}
           </span>
         </div>
-        <div className="space-y-1.5">
+        <div className="space-y-1">
           <h3 className="line-clamp-2 text-[17px] font-semibold leading-snug tracking-tight text-fg">
             {clip.title}
           </h3>
@@ -54,7 +61,7 @@ export function ClipCard({ clip }: { clip: Clip }) {
             {clip.tags.map((tag) => (
               <span
                 key={tag.id}
-                className="rounded-full bg-fill px-2 py-0.5 text-xs text-muted"
+                className="rounded-full bg-fill px-2 py-0.5 text-caption text-muted"
               >
                 {tag.name}
               </span>
