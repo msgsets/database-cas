@@ -26,9 +26,9 @@ export function CaptureCard() {
       qc.invalidateQueries({ queryKey: ["clips"] });
       setLast(result.clip);
       setValue("");
-      toast.success("已收入资料库");
+      toast.success("已收入");
     },
-    onError: () => toast.error("收入失败，请再试一次"),
+    onError: () => toast.error("收入失败"),
   });
 
   function submit() {
@@ -45,18 +45,7 @@ export function CaptureCard() {
   }
 
   return (
-    <section className="rise-in rise-in-2 rounded-2xl bg-surface p-6 shadow-card sm:p-8">
-      <div className="mb-5 flex items-end justify-between gap-4">
-        <div>
-          <p className="text-sm font-medium text-primary">01</p>
-          <h2 className="mt-1 text-2xl font-semibold tracking-tight text-fg">
-            收入
-          </h2>
-          <p className="mt-1.5 max-w-md text-[15px] leading-relaxed text-muted">
-            粘贴文字或链接，自动解析并存入资料库。
-          </p>
-        </div>
-      </div>
+    <section className="rise-in rise-in-2 rounded-2xl bg-surface p-5 shadow-card sm:p-6">
       <Textarea
         value={value}
         onChange={(event) => setValue(event.target.value)}
@@ -66,12 +55,12 @@ export function CaptureCard() {
         className="min-h-[140px]"
       />
       <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-        <p className="text-xs text-subtle">⌘ Enter 收入</p>
+        <p className="text-xs text-subtle">⌘ Enter</p>
         <Button onClick={submit} disabled={mutation.isPending || !value.trim()}>
           {mutation.isPending ? (
             <>
               <Loader2 className="size-4 animate-spin" />
-              正在解析
+              解析中
             </>
           ) : (
             "收入"
@@ -82,7 +71,7 @@ export function CaptureCard() {
         <Link
           to="/clips/$id"
           params={{ id: String(last.id) }}
-          className="mt-5 flex items-center gap-3 rounded-xl bg-fill px-4 py-3 transition-colors duration-150 hover:bg-fill-2"
+          className="mt-4 flex items-center gap-3 rounded-xl bg-fill px-4 py-3 transition-colors duration-150 hover:bg-fill-2"
         >
           <TypeBadge type={last.type} />
           <span className="min-w-0 flex-1 truncate text-sm font-medium text-fg">

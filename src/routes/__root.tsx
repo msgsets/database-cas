@@ -15,7 +15,7 @@ export const Route = createRootRoute({
       { name: "theme-color", content: "#f5f5f7" },
       {
         name: "description",
-        content: "把看到的留下来。粘贴文字或链接，自动收入资料库。",
+        content: "Folio",
       },
     ],
     links: [

@@ -131,12 +131,7 @@ function NotesPanel() {
   return (
     <div className="flex h-full min-h-[420px] flex-col">
       <header className="flex items-center justify-between px-4 py-3">
-        <div>
-          <p className="text-xs font-medium tracking-wide text-subtle">03</p>
-          <h2 className="text-[17px] font-semibold tracking-tight text-fg">
-            随手记
-          </h2>
-        </div>
+        <h2 className="text-[17px] font-semibold tracking-tight text-fg">随手记</h2>
         <Button
           variant="ghost"
           size="icon"
@@ -171,15 +166,13 @@ function NotesPanel() {
             value={draft}
             onChange={(event) => setDraft(event.target.value)}
             className="min-h-0 flex-1 resize-none bg-transparent px-4 pb-4 text-[15px] leading-relaxed text-fg outline-none"
-            placeholder="写下一句就好…"
+            placeholder="写点什么…"
           />
         </div>
       ) : (
         <div className="min-h-0 flex-1 overflow-y-auto px-2 pb-3">
           {notes.length === 0 ? (
-            <p className="px-3 py-8 text-center text-sm text-muted">
-              还没有笔记。点右上角写一句。
-            </p>
+            <p className="px-3 py-8 text-center text-sm text-muted">还没有笔记</p>
           ) : (
             <ul className="space-y-1">
               {notes.map((note) => (

@@ -49,13 +49,10 @@ function LibraryPage() {
   return (
     <AppShell>
       <main className="mx-auto max-w-5xl px-4 py-8 pb-28 sm:px-6 sm:py-12 lg:pb-12">
-        <header className="mb-8">
-          <p className="text-sm font-medium text-muted">Database</p>
-          <h1 className="mt-2 text-4xl font-semibold tracking-tight text-fg">
-            资料库
-          </h1>
-          <p className="mt-2 text-[15px] text-muted">
-            {clipsQuery.isPending ? "正在读取…" : `${total} 条`}
+        <header className="mb-6">
+          <h1 className="text-3xl font-semibold tracking-tight text-fg">资料库</h1>
+          <p className="mt-1 text-sm text-muted">
+            {clipsQuery.isPending ? "…" : `${total} 条`}
             {search.q ? ` · “${search.q}”` : ""}
           </p>
         </header>
@@ -78,8 +75,7 @@ function LibraryPage() {
           </div>
         ) : (
           <div className="rounded-2xl bg-surface px-6 py-16 text-center shadow-card">
-            <p className="text-[17px] font-medium text-fg">没有匹配的内容</p>
-            <p className="mt-2 text-sm text-muted">换一个时间、标签或类型再看。</p>
+            <p className="text-sm text-muted">没有匹配的内容</p>
           </div>
         )}
       </main>
