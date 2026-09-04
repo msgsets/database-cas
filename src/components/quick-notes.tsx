@@ -1,9 +1,10 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { StickyNote, X } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { Pin, StickyNote, X } from "lucide-react";
+import { useState, type KeyboardEvent } from "react";
 import { createNote, listNotes, updateNote } from "@/lib/notes-api";
+import { notePreview, noteTitle, type Note } from "@/lib/clip-types";
 import { useNotesUi } from "@/lib/notes-ui";
 import { cn } from "@/lib/utils";
 
@@ -13,8 +14,10 @@ export function QuickNotes() {
 
   return (
     <>
-      <aside className="hidden w-[280px] shrink-0 lg:block">
-        <NoteComposer className="h-44 shadow-card" />
+      <aside className="sticky top-24 hidden h-[calc(100dvh-7.5rem)] w-[300px] shrink-0 lg:flex">
+        <div className="flex h-full w-full flex-col overflow-hidden rounded-2xl bg-surface shadow-card">
+          <NotesPanel />
+        </div>
       </aside>
 
       <div className="lg:hidden">
@@ -54,8 +57,8 @@ export function QuickNotes() {
                 <X className="size-5" />
               </button>
             </div>
-            <div className="px-4 pt-2 pb-[max(1rem,env(safe-area-inset-bottom))]">
-              {open ? <NoteComposer className="h-48" /> : null}
+            <div className="min-h-[420px] overflow-hidden pb-[env(safe-area-inset-bottom)]">
+              {open ? <NotesPanel /> : null}
             </div>
           </div>
         </div>
@@ -64,76 +67,108 @@ export function QuickNotes() {
   );
 }
 
-function NoteComposer({ className }: { className?: string }) {
+function NotesPanel() {
   const qc = useQueryClient();
   const notesQuery = useQuery({ queryKey: ["notes"], queryFn: () => listNotes() });
-  const latest = notesQuery.data?.[0] ?? null;
+  const notes = notesQuery.data ?? [];
+  const pinned = notes.filter((note) => note.pinned);
+  const rest = notes.filter((note) => !note.pinned);
   const [draft, setDraft] = useState("");
-  const savedBody = useRef("");
-  const idRef = useRef<number | null>(null);
-  const creating = useRef(false);
-  const updateRef = useRef<(input: { id: number; body: string }) => void>(() => {});
-
-  useEffect(() => {
-    if (!latest) return;
-    if (idRef.current && idRef.current !== latest.id) return;
-    idRef.current = latest.id;
-    savedBody.current = latest.body;
-    setDraft(latest.body);
-  }, [latest?.id, latest?.body]);
 
   const create = useMutation({
     mutationFn: (body: string) => createNote({ data: { body } }),
     onSuccess: (result) => {
-      creating.current = false;
       if (!result.ok) return;
-      idRef.current = result.note.id;
-      savedBody.current = result.note.body;
-      qc.invalidateQueries({ queryKey: ["notes"] });
-    },
-    onError: () => {
-      creating.current = false;
-    },
-  });
-
-  const update = useMutation({
-    mutationFn: (input: { id: number; body: string }) => updateNote({ data: input }),
-    onSuccess: (result) => {
-      if (result.ok) savedBody.current = result.note.body;
+      setDraft("");
       qc.invalidateQueries({ queryKey: ["notes"] });
     },
   });
 
-  updateRef.current = (input) => update.mutate(input);
+  const pin = useMutation({
+    mutationFn: (input: { id: number; pinned: boolean }) => updateNote({ data: input }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["notes"] });
+    },
+  });
 
-  useEffect(() => {
-    const next = draft;
-    if (next === savedBody.current) return;
-    const timer = setTimeout(() => {
-      const id = idRef.current;
-      if (id) {
-        updateRef.current({ id, body: next });
-        return;
-      }
-      if (!next.trim() || creating.current) return;
-      creating.current = true;
-      create.mutate(next.trim());
-    }, 450);
-    return () => clearTimeout(timer);
-  }, [draft]);
+  function submit() {
+    const next = draft.trim();
+    if (!next || create.isPending) return;
+    create.mutate(next);
+  }
+
+  function onKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
+    if (event.key === "Enter" && !event.shiftKey) {
+      event.preventDefault();
+      submit();
+    }
+  }
 
   return (
-    <textarea
-      value={draft}
-      onChange={(event) => setDraft(event.target.value)}
-      placeholder="在想什么？"
-      aria-label="随手记"
-      className={cn(
-        "w-full resize-none rounded-2xl bg-surface px-4 py-3.5 text-[15px] leading-relaxed text-fg outline-none placeholder:text-subtle",
-        "transition-[box-shadow] duration-150 ease-smooth-out",
-        "focus:shadow-[0_0_0_4px_rgba(0,113,227,0.18)]",
-        className,
-      )}
-    />
+    <div className="flex h-full min-h-[420px] flex-col">
+      <textarea
+        value={draft}
+        onChange={(event) => setDraft(event.target.value)}
+        onKeyDown={onKeyDown}
+        onBlur={() => {
+          if (draft.trim()) submit();
+        }}
+        placeholder="在想什么？"
+        aria-label="随手记"
+        rows={4}
+        className="min-h-[128px] shrink-0 resize-none border-b border-border/70 bg-transparent px-4 py-3.5 text-[15px] leading-relaxed text-fg outline-none placeholder:text-subtle"
+      />
+
+      <div className="min-h-0 flex-1 overflow-y-auto px-1.5 py-2">
+        {pinned.length ? (
+          <ul className="space-y-0.5">
+            {pinned.map((note) => (
+              <NoteRow
+                key={note.id}
+                note={note}
+                onPin={() => pin.mutate({ id: note.id, pinned: false })}
+              />
+            ))}
+          </ul>
+        ) : null}
+
+        {rest.length ? (
+          <ul className={cn("space-y-0.5", pinned.length && "mt-2 border-t border-border/60 pt-2")}>
+            {rest.map((note) => (
+              <NoteRow
+                key={note.id}
+                note={note}
+                onPin={() => pin.mutate({ id: note.id, pinned: true })}
+              />
+            ))}
+          </ul>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+function NoteRow({ note, onPin }: { note: Note; onPin: () => void }) {
+  const preview = notePreview(note.body);
+  return (
+    <div className="group flex items-start gap-0.5 rounded-xl pr-1 hover:bg-fill">
+      <button
+        type="button"
+        onClick={onPin}
+        className={cn(
+          "mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full transition-colors",
+          note.pinned ? "text-fg" : "text-subtle opacity-0 group-hover:opacity-100 hover:text-fg",
+        )}
+        aria-label={note.pinned ? "取消固定" : "固定"}
+      >
+        <Pin className="size-3.5" fill={note.pinned ? "currentColor" : "none"} />
+      </button>
+      <div className="min-w-0 flex-1 py-2 pr-2">
+        <p className="truncate text-sm font-medium text-fg">{noteTitle(note.body)}</p>
+        {preview ? (
+          <p className="mt-0.5 line-clamp-2 text-xs leading-relaxed text-muted">{preview}</p>
+        ) : null}
+      </div>
+    </div>
   );
 }

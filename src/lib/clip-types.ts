@@ -58,6 +58,7 @@ export type Clip = {
 export type Note = {
   id: number;
   body: string;
+  pinned: boolean;
   created_at: string;
   updated_at: string;
 };
