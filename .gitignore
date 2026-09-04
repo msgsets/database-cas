@@ -1,0 +1,16 @@
+node_modules
+.env
+.env.*
+!.env.example
+.neon
+.vercel
+.tanstack
+.grok
+artifacts
+screenshots
+AGENTS.md
+startup.sh
+.project_id
+.node_modules.lock
+*.log
+attachments
