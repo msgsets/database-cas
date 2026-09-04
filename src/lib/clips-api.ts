@@ -172,7 +172,7 @@ export const captureInput = createServerFn({ method: "POST" })
     const raw = data.input.trim();
     if (!raw) return { ok: false as const, error: "先粘贴一段文字或链接" };
     if (raw.length > 20_000) {
-      return { ok: false as const, error: "内容过长，试试缩短后再收入" };
+      return { ok: false as const, error: "内容过长，试试缩短后再保存" };
     }
 
     const { parseInput } = await import("./parse-input.server");

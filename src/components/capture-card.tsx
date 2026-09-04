@@ -26,9 +26,9 @@ export function CaptureCard() {
       qc.invalidateQueries({ queryKey: ["clips"] });
       setLast(result.clip);
       setValue("");
-      toast.success("已收入");
+      toast.success("saved");
     },
-    onError: () => toast.error("收入失败"),
+    onError: () => toast.error("Save failed"),
   });
 
   function submit() {
@@ -63,7 +63,7 @@ export function CaptureCard() {
               解析中
             </>
           ) : (
-            "收入"
+            "save"
           )}
         </Button>
       </div>
