@@ -13,7 +13,7 @@ export function QuickNotes() {
 
   return (
     <>
-      <aside className="hidden w-[280px] shrink-0 pt-8 lg:block">
+      <aside className="hidden w-[280px] shrink-0 lg:block">
         <NoteComposer className="h-44 shadow-card" />
       </aside>
 

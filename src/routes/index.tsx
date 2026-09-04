@@ -27,7 +27,7 @@ function Home() {
 
   return (
     <AppShell>
-      <main className="w-full min-w-0 max-w-3xl shrink-0 py-8 pb-28 sm:py-10 lg:pb-10">
+      <main className="w-full min-w-0 max-w-3xl shrink-0 pb-28 lg:pb-10">
         <div className="space-y-4">
           <CaptureCard />
           <SearchEntry />
