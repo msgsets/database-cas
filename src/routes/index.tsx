@@ -51,7 +51,7 @@ function Home() {
               search={DEFAULT_LIBRARY_SEARCH}
               className="text-sm font-medium text-primary"
             >
-              资料库
+              Database
             </Link>
           </div>
           {recent.isPending ? (
