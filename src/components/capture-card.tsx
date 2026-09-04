@@ -55,7 +55,11 @@ export function CaptureCard() {
         className="min-h-[140px]"
       />
       <div className="mt-4 flex justify-end">
-        <Button onClick={submit} disabled={mutation.isPending || !value.trim()}>
+        <Button
+          onClick={submit}
+          disabled={mutation.isPending || !value.trim()}
+          className="bg-fg text-bg hover:bg-fg/90"
+        >
           {mutation.isPending ? (
             <>
               <Loader2 className="size-4 animate-spin" />
