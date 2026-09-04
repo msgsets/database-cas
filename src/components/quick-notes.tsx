@@ -15,9 +15,7 @@ export function QuickNotes() {
   return (
     <>
       <aside className="sticky top-24 hidden h-[calc(100dvh-7.5rem)] w-[300px] shrink-0 lg:flex">
-        <div className="flex h-full w-full flex-col overflow-hidden rounded-2xl bg-surface shadow-card">
-          <NotesPanel />
-        </div>
+        <NotesPanel />
       </aside>
 
       <div className="lg:hidden">
@@ -42,7 +40,7 @@ export function QuickNotes() {
           />
           <div
             className={cn(
-              "absolute inset-x-0 bottom-0 flex max-h-[85dvh] flex-col rounded-t-2xl bg-surface shadow-float transition-transform duration-300 ease-smooth-out",
+              "absolute inset-x-0 bottom-0 flex max-h-[85dvh] flex-col rounded-t-2xl bg-bg shadow-float transition-transform duration-300 ease-smooth-out",
               open ? "translate-y-0" : "translate-y-full",
             )}
           >
@@ -57,7 +55,7 @@ export function QuickNotes() {
                 <X className="size-5" />
               </button>
             </div>
-            <div className="min-h-[420px] overflow-hidden pb-[env(safe-area-inset-bottom)]">
+            <div className="min-h-[420px] overflow-hidden px-4 pb-[env(safe-area-inset-bottom)]">
               {open ? <NotesPanel /> : null}
             </div>
           </div>
@@ -105,8 +103,8 @@ function NotesPanel() {
   }
 
   return (
-    <div className="flex h-full min-h-[420px] flex-col">
-      <div className="relative shrink-0 border-b border-border/70">
+    <div className="flex h-full min-h-[420px] flex-col gap-3">
+      <div className="relative shrink-0 rounded-2xl bg-surface shadow-card">
         <textarea
           value={draft}
           onChange={(event) => setDraft(event.target.value)}
@@ -114,12 +112,12 @@ function NotesPanel() {
           placeholder="在想什么？"
           aria-label="随手记"
           rows={4}
-          className="min-h-[128px] w-full resize-none bg-transparent px-4 py-3.5 pb-8 text-[15px] leading-relaxed text-fg outline-none placeholder:text-subtle"
+          className="min-h-[128px] w-full resize-none rounded-2xl bg-transparent px-4 py-3.5 pb-8 text-[15px] leading-relaxed text-fg outline-none placeholder:text-subtle"
         />
         <p className="pointer-events-none absolute right-3 bottom-2 text-xs text-subtle">⌘ Enter</p>
       </div>
 
-      <div className="min-h-0 flex-1 overflow-y-auto px-1.5 py-2">
+      <div className="min-h-0 flex-1 overflow-y-auto rounded-2xl bg-fill px-1.5 py-2">
         {pinned.length ? (
           <ul className="space-y-0.5">
             {pinned.map((note) => (
@@ -133,7 +131,7 @@ function NotesPanel() {
         ) : null}
 
         {rest.length ? (
-          <ul className={cn("space-y-0.5", pinned.length && "mt-2 border-t border-border/60 pt-2")}>
+          <ul className={cn("space-y-0.5", pinned.length && "mt-2")}>
             {rest.map((note) => (
               <NoteRow
                 key={note.id}
@@ -151,7 +149,7 @@ function NotesPanel() {
 function NoteRow({ note, onPin }: { note: Note; onPin: () => void }) {
   const preview = notePreview(note.body);
   return (
-    <div className="group flex items-start gap-0.5 rounded-xl pr-1 hover:bg-fill">
+    <div className="group flex items-start gap-0.5 rounded-xl pr-1 hover:bg-surface">
       <button
         type="button"
         onClick={onPin}
