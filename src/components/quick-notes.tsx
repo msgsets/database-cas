@@ -98,7 +98,7 @@ function NotesPanel() {
   }
 
   function onKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
-    if (event.key === "Enter" && !event.shiftKey) {
+    if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
       event.preventDefault();
       submit();
     }
@@ -106,18 +106,18 @@ function NotesPanel() {
 
   return (
     <div className="flex h-full min-h-[420px] flex-col">
-      <textarea
-        value={draft}
-        onChange={(event) => setDraft(event.target.value)}
-        onKeyDown={onKeyDown}
-        onBlur={() => {
-          if (draft.trim()) submit();
-        }}
-        placeholder="在想什么？"
-        aria-label="随手记"
-        rows={4}
-        className="min-h-[128px] shrink-0 resize-none border-b border-border/70 bg-transparent px-4 py-3.5 text-[15px] leading-relaxed text-fg outline-none placeholder:text-subtle"
-      />
+      <div className="relative shrink-0 border-b border-border/70">
+        <textarea
+          value={draft}
+          onChange={(event) => setDraft(event.target.value)}
+          onKeyDown={onKeyDown}
+          placeholder="在想什么？"
+          aria-label="随手记"
+          rows={4}
+          className="min-h-[128px] w-full resize-none bg-transparent px-4 py-3.5 pb-8 text-[15px] leading-relaxed text-fg outline-none placeholder:text-subtle"
+        />
+        <p className="pointer-events-none absolute right-3 bottom-2 text-xs text-subtle">⌘ Enter</p>
+      </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto px-1.5 py-2">
         {pinned.length ? (
