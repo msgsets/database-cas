@@ -112,9 +112,8 @@ function NotesPanel() {
           placeholder="在想什么？"
           aria-label="随手记"
           rows={4}
-          className="min-h-[128px] w-full resize-none rounded-2xl bg-transparent px-4 py-3.5 pb-8 text-[15px] leading-relaxed text-fg outline-none placeholder:text-subtle"
+          className="min-h-[128px] w-full resize-none rounded-2xl bg-transparent px-4 py-3.5 text-[15px] leading-relaxed text-fg outline-none placeholder:text-subtle"
         />
-        <p className="pointer-events-none absolute right-3 bottom-2 text-xs text-subtle">⌘ Enter</p>
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto rounded-2xl bg-fill px-1.5 py-2">

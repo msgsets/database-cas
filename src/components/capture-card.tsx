@@ -54,8 +54,7 @@ export function CaptureCard() {
         rows={5}
         className="min-h-[140px]"
       />
-      <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-        <p className="text-xs text-subtle">⌘ Enter</p>
+      <div className="mt-4 flex justify-end">
         <Button onClick={submit} disabled={mutation.isPending || !value.trim()}>
           {mutation.isPending ? (
             <>

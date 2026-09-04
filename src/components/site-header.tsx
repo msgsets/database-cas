@@ -33,7 +33,7 @@ export function SiteHeader() {
                   : "text-muted hover:text-fg",
               )}
             >
-              Database
+              DATABASE
             </Link>
             <button
               type="button"

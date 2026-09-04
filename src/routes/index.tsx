@@ -51,7 +51,7 @@ function Home() {
               search={DEFAULT_LIBRARY_SEARCH}
               className="text-sm font-medium text-primary"
             >
-              Database
+              DATABASE
             </Link>
           </div>
           {recent.isPending ? (
