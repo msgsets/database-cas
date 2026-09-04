@@ -12,7 +12,7 @@ export function SiteHeader() {
   return (
     <>
       <header className="sticky top-0 z-50 border-b border-border/50 bg-bg/80 backdrop-blur-xl">
-        <div className="flex h-14 items-center justify-between px-4 sm:px-6 lg:pl-12 lg:pr-6">
+        <div className="flex h-14 items-center justify-between px-4 sm:px-6 lg:px-12">
           <Link
             to="/"
             className={cn(
