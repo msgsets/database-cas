@@ -84,7 +84,7 @@ function ClipDetailPage() {
 
   return (
     <AppShell>
-      <main className="mx-auto max-w-2xl px-4 py-8 pb-28 sm:px-6 sm:py-12 lg:pb-12">
+      <main className="w-full min-w-0 max-w-2xl shrink-0 py-8 pb-28 sm:py-12 lg:pb-12">
         <Link
           to="/library"
           search={DEFAULT_LIBRARY_SEARCH}

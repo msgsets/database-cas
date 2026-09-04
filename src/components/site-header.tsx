@@ -12,7 +12,7 @@ export function SiteHeader() {
   return (
     <>
       <header className="sticky top-0 z-50 border-b border-border/50 bg-bg/80 backdrop-blur-xl">
-        <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4 sm:px-6">
+        <div className="flex h-14 items-center justify-between px-4 sm:px-6 lg:pl-12 lg:pr-6">
           <Link to="/" className="text-[17px] font-semibold tracking-tight text-fg">
             Folio
           </Link>

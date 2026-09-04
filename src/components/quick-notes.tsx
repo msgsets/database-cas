@@ -1,14 +1,11 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus, StickyNote, Trash2, X } from "lucide-react";
+import { StickyNote, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { toast } from "sonner";
-import { createNote, deleteNote, listNotes, updateNote } from "@/lib/notes-api";
-import { notePreview, noteTitle, type Note } from "@/lib/clip-types";
+import { createNote, listNotes, updateNote } from "@/lib/notes-api";
 import { useNotesUi } from "@/lib/notes-ui";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
 
 export function QuickNotes() {
   const open = useNotesUi((state) => state.open);
@@ -16,50 +13,50 @@ export function QuickNotes() {
 
   return (
     <>
-      <aside className="pointer-events-none fixed top-20 right-4 bottom-6 z-40 hidden w-[300px] lg:block">
-        <div className="pointer-events-auto flex h-full flex-col overflow-hidden rounded-2xl bg-surface shadow-float">
-          <NotesPanel />
-        </div>
+      <aside className="hidden w-[280px] shrink-0 pt-8 lg:block">
+        <NoteComposer className="h-44 shadow-card" />
       </aside>
 
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className="fixed right-4 bottom-5 z-40 flex size-14 items-center justify-center rounded-full bg-fg text-bg shadow-float transition-transform duration-150 ease-smooth-out hover:scale-[1.03] active:scale-[0.96] lg:hidden"
-        aria-label="打开随手记"
-      >
-        <StickyNote className="size-5" strokeWidth={1.75} />
-      </button>
-
-      <div className={cn("fixed inset-0 z-50 lg:hidden", open ? "pointer-events-auto" : "pointer-events-none")}>
+      <div className="lg:hidden">
         <button
           type="button"
-          aria-label="关闭随手记"
-          onClick={() => setOpen(false)}
-          className={cn(
-            "absolute inset-0 bg-fg/30 transition-opacity duration-200",
-            open ? "opacity-100" : "opacity-0",
-          )}
-        />
-        <div
-          className={cn(
-            "absolute inset-x-0 bottom-0 flex max-h-[85dvh] flex-col rounded-t-2xl bg-surface shadow-float transition-transform duration-300 ease-smooth-out",
-            open ? "translate-y-0" : "translate-y-full",
-          )}
+          onClick={() => setOpen(true)}
+          className="fixed right-4 bottom-5 z-40 flex size-14 items-center justify-center rounded-full bg-fg text-bg shadow-float transition-transform duration-150 ease-smooth-out hover:scale-[1.03] active:scale-[0.96]"
+          aria-label="打开随手记"
         >
-          <div className="relative flex items-center justify-center px-4 pt-3">
-            <span className="h-1 w-10 rounded-full bg-fill-2" />
-            <button
-              type="button"
-              onClick={() => setOpen(false)}
-              className="absolute top-2 right-3 flex size-11 items-center justify-center rounded-full text-muted hover:bg-fill"
-              aria-label="关闭"
-            >
-              <X className="size-5" />
-            </button>
-          </div>
-          <div className="min-h-0 flex-1 overflow-hidden pb-[env(safe-area-inset-bottom)]">
-            {open ? <NotesPanel /> : null}
+          <StickyNote className="size-5" strokeWidth={1.75} />
+        </button>
+
+        <div className={cn("fixed inset-0 z-50", open ? "pointer-events-auto" : "pointer-events-none")}>
+          <button
+            type="button"
+            aria-label="关闭随手记"
+            onClick={() => setOpen(false)}
+            className={cn(
+              "absolute inset-0 bg-fg/30 transition-opacity duration-200",
+              open ? "opacity-100" : "opacity-0",
+            )}
+          />
+          <div
+            className={cn(
+              "absolute inset-x-0 bottom-0 flex max-h-[85dvh] flex-col rounded-t-2xl bg-surface shadow-float transition-transform duration-300 ease-smooth-out",
+              open ? "translate-y-0" : "translate-y-full",
+            )}
+          >
+            <div className="relative flex items-center justify-center px-4 pt-3">
+              <span className="h-1 w-10 rounded-full bg-fill-2" />
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                className="absolute top-2 right-3 flex size-11 items-center justify-center rounded-full text-muted hover:bg-fill"
+                aria-label="关闭"
+              >
+                <X className="size-5" />
+              </button>
+            </div>
+            <div className="px-4 pt-2 pb-[max(1rem,env(safe-area-inset-bottom))]">
+              {open ? <NoteComposer className="h-48" /> : null}
+            </div>
           </div>
         </div>
       </div>
@@ -67,28 +64,35 @@ export function QuickNotes() {
   );
 }
 
-function NotesPanel() {
+function NoteComposer({ className }: { className?: string }) {
   const qc = useQueryClient();
   const notesQuery = useQuery({ queryKey: ["notes"], queryFn: () => listNotes() });
-  const notes = notesQuery.data ?? [];
-  const [activeId, setActiveId] = useState<number | null>(null);
+  const latest = notesQuery.data?.[0] ?? null;
   const [draft, setDraft] = useState("");
   const savedBody = useRef("");
+  const idRef = useRef<number | null>(null);
+  const creating = useRef(false);
   const updateRef = useRef<(input: { id: number; body: string }) => void>(() => {});
 
-  const active = notes.find((note) => note.id === activeId) ?? null;
+  useEffect(() => {
+    if (!latest) return;
+    if (idRef.current && idRef.current !== latest.id) return;
+    idRef.current = latest.id;
+    savedBody.current = latest.body;
+    setDraft(latest.body);
+  }, [latest?.id, latest?.body]);
 
   const create = useMutation({
     mutationFn: (body: string) => createNote({ data: { body } }),
     onSuccess: (result) => {
-      if (!result.ok) {
-        toast.error(result.error);
-        return;
-      }
-      qc.invalidateQueries({ queryKey: ["notes"] });
+      creating.current = false;
+      if (!result.ok) return;
+      idRef.current = result.note.id;
       savedBody.current = result.note.body;
-      setActiveId(result.note.id);
-      setDraft(result.note.body);
+      qc.invalidateQueries({ queryKey: ["notes"] });
+    },
+    onError: () => {
+      creating.current = false;
     },
   });
 
@@ -102,108 +106,34 @@ function NotesPanel() {
 
   updateRef.current = (input) => update.mutate(input);
 
-  const remove = useMutation({
-    mutationFn: (id: number) => deleteNote({ data: { id } }),
-    onSuccess: (_result, id) => {
-      if (activeId === id) {
-        setActiveId(null);
-        setDraft("");
-      }
-      qc.invalidateQueries({ queryKey: ["notes"] });
-    },
-  });
-
   useEffect(() => {
-    if (!active) return;
-    savedBody.current = active.body;
-    setDraft(active.body);
-  }, [active?.id]);
-
-  useEffect(() => {
-    if (!activeId) return;
-    if (draft === savedBody.current) return;
+    const next = draft;
+    if (next === savedBody.current) return;
     const timer = setTimeout(() => {
-      updateRef.current({ id: activeId, body: draft });
+      const id = idRef.current;
+      if (id) {
+        updateRef.current({ id, body: next });
+        return;
+      }
+      if (!next.trim() || creating.current) return;
+      creating.current = true;
+      create.mutate(next.trim());
     }, 450);
     return () => clearTimeout(timer);
-  }, [draft, activeId]);
+  }, [draft]);
 
   return (
-    <div className="flex h-full min-h-[420px] flex-col">
-      <header className="flex items-center justify-between px-4 py-3">
-        <h2 className="text-[17px] font-semibold tracking-tight text-fg">随手记</h2>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="size-10"
-          onClick={() => create.mutate("新笔记")}
-          aria-label="新建笔记"
-        >
-          <Plus className="size-5" />
-        </Button>
-      </header>
-
-      {active ? (
-        <div className="flex min-h-0 flex-1 flex-col border-t border-border/70">
-          <div className="flex items-center justify-between px-2">
-            <button
-              type="button"
-              onClick={() => setActiveId(null)}
-              className="h-10 px-3 text-sm text-primary"
-            >
-              全部笔记
-            </button>
-            <button
-              type="button"
-              onClick={() => remove.mutate(active.id)}
-              className="flex size-10 items-center justify-center rounded-full text-muted hover:bg-fill hover:text-danger"
-              aria-label="删除笔记"
-            >
-              <Trash2 className="size-4" />
-            </button>
-          </div>
-          <textarea
-            value={draft}
-            onChange={(event) => setDraft(event.target.value)}
-            className="min-h-0 flex-1 resize-none bg-transparent px-4 pb-4 text-[15px] leading-relaxed text-fg outline-none"
-            placeholder="写点什么…"
-          />
-        </div>
-      ) : (
-        <div className="min-h-0 flex-1 overflow-y-auto px-2 pb-3">
-          {notes.length === 0 ? (
-            <p className="px-3 py-8 text-center text-sm text-muted">还没有笔记</p>
-          ) : (
-            <ul className="space-y-1">
-              {notes.map((note) => (
-                <NoteRow
-                  key={note.id}
-                  note={note}
-                  onOpen={() => setActiveId(note.id)}
-                />
-              ))}
-            </ul>
-          )}
-        </div>
+    <textarea
+      value={draft}
+      onChange={(event) => setDraft(event.target.value)}
+      placeholder="在想什么？"
+      aria-label="随手记"
+      className={cn(
+        "w-full resize-none rounded-2xl bg-surface px-4 py-3.5 text-[15px] leading-relaxed text-fg outline-none placeholder:text-subtle",
+        "transition-[box-shadow] duration-150 ease-smooth-out",
+        "focus:shadow-[0_0_0_4px_rgba(0,113,227,0.18)]",
+        className,
       )}
-    </div>
-  );
-}
-
-function NoteRow({ note, onOpen }: { note: Note; onOpen: () => void }) {
-  const preview = notePreview(note.body);
-  return (
-    <button
-      type="button"
-      onClick={onOpen}
-      className="w-full rounded-xl px-3 py-2.5 text-left transition-colors duration-150 hover:bg-fill"
-    >
-      <p className="truncate text-sm font-medium text-fg">{noteTitle(note.body)}</p>
-      {preview ? (
-        <p className="mt-0.5 line-clamp-2 text-xs leading-relaxed text-muted">
-          {preview}
-        </p>
-      ) : null}
-    </button>
+    />
   );
 }

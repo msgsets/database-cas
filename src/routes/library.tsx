@@ -48,7 +48,7 @@ function LibraryPage() {
 
   return (
     <AppShell>
-      <main className="mx-auto max-w-5xl px-4 py-8 pb-28 sm:px-6 sm:py-12 lg:pb-12">
+      <main className="w-full min-w-0 max-w-5xl shrink-0 py-8 pb-28 sm:py-12 lg:pb-12">
         <header className="mb-6">
           <h1 className="text-3xl font-semibold tracking-tight text-fg">资料库</h1>
           <p className="mt-1 text-sm text-muted">
