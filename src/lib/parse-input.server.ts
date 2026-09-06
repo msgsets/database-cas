@@ -136,6 +136,26 @@ function youtubeThumb(url: URL): string | null {
 }
 
 async function parseUrl(url: URL): Promise<ParsedClip> {
+  const htmlResult = await parseUrlHtml(url);
+  if (!needsReaderFallback(htmlResult, url)) return htmlResult;
+
+  const reader = await parseWithReader(url);
+  if (!reader) return htmlResult;
+  return mergeParsed(htmlResult, reader);
+}
+
+function needsReaderFallback(parsed: ParsedClip, url: URL): boolean {
+  if (parsed.type === "image" || parsed.type === "video") return false;
+  const hostTitle = url.hostname.replace(/^www\./, "");
+  const titleIsWeak =
+    !parsed.title ||
+    parsed.title === hostTitle ||
+    parsed.title === parsed.site_name;
+  const bodyIsWeak = !parsed.content || parsed.content.length < 120;
+  return titleIsWeak || bodyIsWeak;
+}
+
+async function parseUrlHtml(url: URL): Promise<ParsedClip> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 8000);
   try {
@@ -144,8 +164,9 @@ async function parseUrl(url: URL): Promise<ParsedClip> {
       redirect: "follow",
       headers: {
         "User-Agent":
-          "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15",
-        Accept: "text/html,application/xhtml+xml,image/*,*/*;q=0.8",
+          "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Safari/605.1.15",
+        Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+        "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8",
       },
     });
     if (!res.ok) return fallbackUrl(url);
@@ -168,22 +189,33 @@ async function parseUrl(url: URL): Promise<ParsedClip> {
     const buffer = await res.arrayBuffer();
     if (buffer.byteLength > MAX_BYTES) return fallbackUrl(url);
     const html = new TextDecoder("utf-8").decode(buffer);
+    const ld = readJsonLd(html);
 
     const ogTitle = metaContent(html, ["og:title", "twitter:title"]);
     const titleTag = html.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1];
-    const title = (ogTitle || stripTags(titleTag || "")).trim() || url.hostname;
-    const description = metaContent(html, [
-      "og:description",
-      "twitter:description",
-      "description",
+    const title =
+      (ogTitle || ld.title || stripTags(titleTag || "")).trim() || url.hostname;
+    const description =
+      metaContent(html, ["og:description", "twitter:description", "description"]) ||
+      ld.description ||
+      null;
+    const ogImage = metaContent(html, [
+      "og:image",
+      "twitter:image",
+      "og:image:url",
+      "twitter:image:src",
     ]);
-    const ogImage = metaContent(html, ["og:image", "twitter:image", "og:image:url"]);
     const siteName =
-      metaContent(html, ["og:site_name"]) || url.hostname.replace(/^www\./, "");
-    const ogType = metaContent(html, ["og:type"]);
-    const image = absolutize(url, ogImage) || youtubeThumb(url);
+      metaContent(html, ["og:site_name"]) ||
+      ld.siteName ||
+      url.hostname.replace(/^www\./, "");
+    const ogType = metaContent(html, ["og:type"]) || ld.type;
+    const image = absolutize(url, ogImage || ld.image) || youtubeThumb(url);
     const type = detectTypeFromUrl(url, ogType);
-    const article = type === "video" || type === "image" ? "" : extractArticle(html);
+    const article =
+      type === "video" || type === "image"
+        ? ""
+        : ld.articleBody || extractArticle(html);
     const body =
       article.length > 160
         ? article
@@ -205,9 +237,154 @@ async function parseUrl(url: URL): Promise<ParsedClip> {
       site_name: siteName.slice(0, 120),
       image_url: image,
     };
+  } catch {
+    return fallbackUrl(url);
   } finally {
     clearTimeout(timer);
   }
+}
+
+async function parseWithReader(url: URL): Promise<Partial<ParsedClip> | null> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 8000);
+  try {
+    const res = await fetch(`https://r.jina.ai/${url.toString()}`, {
+      signal: controller.signal,
+      headers: {
+        Accept: "text/plain",
+        "X-Timeout": "8",
+        "User-Agent":
+          "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Safari/605.1.15",
+      },
+    });
+    if (!res.ok) return null;
+    const text = (await res.text()).trim();
+    if (text.length < 40) return null;
+
+    const title = text.match(/^Title:\s*(.+)$/m)?.[1]?.trim();
+    const markdown = text.includes("Markdown Content:")
+      ? text.split("Markdown Content:").slice(1).join("Markdown Content:").trim()
+      : text;
+    const cleaned = markdown
+      .replace(/^URL Source:.*$/gm, "")
+      .replace(/^Published Time:.*$/gm, "")
+      .replace(/^Title:.*$/gm, "")
+      .replace(/\n{3,}/g, "\n\n")
+      .trim();
+    if (!cleaned && !title) return null;
+
+    const excerpt = cleaned
+      ? cleaned.replace(/[#>*`]/g, "").replace(/\s+/g, " ").trim().slice(0, 400)
+      : null;
+
+    return {
+      title: title?.slice(0, 200),
+      excerpt,
+      content: cleaned ? cleaned.slice(0, 20_000) : null,
+      type: cleaned.length > 80 ? "article" : undefined,
+    };
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+function mergeParsed(base: ParsedClip, extra: Partial<ParsedClip>): ParsedClip {
+  const host = base.site_name || "";
+  const title =
+    extra.title && extra.title !== host && extra.title.length > (base.title?.length ?? 0)
+      ? extra.title
+      : extra.title && (base.title === host || !base.title)
+        ? extra.title
+        : base.title;
+  const content =
+    extra.content && extra.content.length > (base.content?.length ?? 0)
+      ? extra.content
+      : base.content;
+  const excerpt = extra.excerpt && (!base.excerpt || base.excerpt.length < 40)
+    ? extra.excerpt
+    : base.excerpt;
+  const type =
+    extra.type && base.type === "link" && content && content.length > 80
+      ? extra.type
+      : base.type === "link" && content && content.length > 80
+        ? "article"
+        : base.type;
+  return { ...base, title, content, excerpt, type };
+}
+
+function readJsonLd(html: string): {
+  title?: string;
+  description?: string;
+  image?: string;
+  articleBody?: string;
+  siteName?: string;
+  type?: string;
+} {
+  const out: {
+    title?: string;
+    description?: string;
+    image?: string;
+    articleBody?: string;
+    siteName?: string;
+    type?: string;
+  } = {};
+  const blocks = html.matchAll(
+    /<script[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi,
+  );
+  for (const block of blocks) {
+    try {
+      const parsed: unknown = JSON.parse(block[1]!.replace(/[\u0000]/g, "").trim());
+      const nodes = flattenLd(parsed);
+      for (const node of nodes) {
+        if (!node || typeof node !== "object") continue;
+        const rec = node as Record<string, unknown>;
+        const kind = String(rec["@type"] ?? "");
+        const headline = asString(rec.headline) || asString(rec.name);
+        if (headline) out.title = headline;
+        const description = asString(rec.description);
+        if (description) out.description = description;
+        const body = asString(rec.articleBody);
+        if (body) out.articleBody = body;
+        const image = ldImage(rec.image);
+        if (image) out.image = image;
+        const publisher = rec.publisher;
+        if (publisher && typeof publisher === "object") {
+          const name = asString((publisher as Record<string, unknown>).name);
+          if (name) out.siteName = name;
+        }
+        const lower = kind.toLowerCase();
+        if (lower.includes("article") || lower.includes("blog")) out.type = "article";
+        if (lower.includes("video")) out.type = "video";
+      }
+    } catch {
+      // ignore malformed JSON-LD
+    }
+  }
+  return out;
+}
+
+function flattenLd(value: unknown): unknown[] {
+  if (Array.isArray(value)) return value.flatMap(flattenLd);
+  if (value && typeof value === "object") {
+    const rec = value as Record<string, unknown>;
+    if (Array.isArray(rec["@graph"])) return rec["@graph"];
+  }
+  return value ? [value] : [];
+}
+
+function asString(value: unknown): string | null {
+  return typeof value === "string" && value.trim() ? value.trim() : null;
+}
+
+function ldImage(value: unknown): string | null {
+  if (typeof value === "string") return value;
+  if (Array.isArray(value)) return ldImage(value[0]);
+  if (value && typeof value === "object") {
+    return asString((value as Record<string, unknown>).url);
+  }
+  return null;
 }
 
 function metaContent(html: string, names: string[]): string | null {
