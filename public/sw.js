@@ -1,4 +1,4 @@
-const CACHE = "database-shell-v1";
+const CACHE = "database-shell-v2";
 const PRECACHE = [
   "/",
   "/favicon.svg",
