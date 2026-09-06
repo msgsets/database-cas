@@ -4,7 +4,7 @@ import { PreviewHostBridge } from "@/components/preview-host-bridge";
 import { Providers } from "@/components/providers";
 import appCss from "../styles.css?url";
 
-const APP_NAME = "Folio";
+const APP_NAME = "Database";
 
 export const Route = createRootRoute({
   head: () => ({

@@ -1,4 +1,4 @@
-# Folio
+# Database
 
 Apple-style capture library. Paste text or a link, search, and jot notes.
 

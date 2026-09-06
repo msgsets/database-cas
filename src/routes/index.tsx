@@ -5,6 +5,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { AppShell } from "@/components/app-shell";
 import { CaptureCard } from "@/components/capture-card";
 import { ClipCard } from "@/components/clip-card";
+import { NotesRail } from "@/components/notes-rail";
 import { listClips } from "@/lib/clips-api";
 import { DEFAULT_LIBRARY_SEARCH } from "@/lib/clip-types";
 
@@ -25,10 +26,14 @@ function Home() {
 
   return (
     <AppShell>
-      <main className="mx-auto w-full max-w-3xl min-w-0">
+      <main className="w-full min-w-0">
         <h1 className="font-en large-title mb-6">HOME</h1>
 
         <CaptureCard />
+
+        <div className="mt-4 lg:hidden">
+          <NotesRail compact />
+        </div>
 
         <section className="mt-10">
           <div className="mb-4 flex justify-end">

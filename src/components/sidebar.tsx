@@ -10,7 +10,7 @@ export function Sidebar() {
   return (
     <aside className="material-heavy fixed inset-y-0 left-0 z-40 hidden w-56 flex-col px-3 pt-5 pb-6 lg:flex">
       <Link to="/" className="font-en mb-6 px-3 text-[22px] tracking-wide text-fg">
-        Folio
+        Database
       </Link>
       <nav className="flex flex-col gap-0.5">
         {NAV_ITEMS.map((item) => {
