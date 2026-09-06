@@ -9,6 +9,7 @@ import {
   type TimeFilter,
   type TypeFilter,
 } from "@/lib/clip-types";
+import { contentRank, headingCount } from "@/lib/article-md";
 
 type ClipRow = {
   id: number;
@@ -175,12 +176,16 @@ export const readSource = createServerFn({ method: "GET" })
       return { ok: true as const, clip };
     }
     const existing = clip.content ?? "";
-    if (existing.length > 1500) return { ok: true as const, clip };
-    const { fetchArticle } = await import("./parse-input.server");
-    const article = await fetchArticle(clip.url);
-    if (!article || article.content.length <= existing.length) {
+    if (headingCount(existing) > 0 && existing.length > 280) {
       return { ok: true as const, clip };
     }
+    const { fetchArticle } = await import("./parse-input.server");
+    const article = await fetchArticle(clip.url);
+    if (!article) return { ok: true as const, clip };
+    const better =
+      contentRank(article.content) > contentRank(existing) ||
+      headingCount(article.content) > headingCount(existing);
+    if (!better) return { ok: true as const, clip };
     const sql = await getSql();
     await sql.query(
       `update clips set content = $1, excerpt = coalesce(nullif($2, ''), excerpt) where id = $3`,

@@ -1,3 +1,4 @@
+import { contentRank, headingCount } from "@/lib/article-md";
 import type { ClipType } from "@/lib/clip-types";
 
 export type ParsedClip = {
@@ -152,7 +153,8 @@ function needsReaderFallback(parsed: ParsedClip, url: URL): boolean {
     parsed.title === hostTitle ||
     parsed.title === parsed.site_name;
   const bodyIsWeak = !parsed.content || parsed.content.length < 120;
-  return titleIsWeak || bodyIsWeak;
+  const structureIsWeak = headingCount(parsed.content) === 0;
+  return titleIsWeak || bodyIsWeak || structureIsWeak;
 }
 
 async function parseUrlHtml(url: URL): Promise<ParsedClip> {
@@ -212,12 +214,12 @@ async function parseUrlHtml(url: URL): Promise<ParsedClip> {
     const ogType = metaContent(html, ["og:type"]) || ld.type;
     const image = absolutize(url, ogImage || ld.image) || youtubeThumb(url);
     const type = detectTypeFromUrl(url, ogType);
+    const extracted = type === "video" || type === "image" ? "" : extractArticle(html);
+    const ldBody = type === "video" || type === "image" ? "" : ld.articleBody || "";
     const article =
-      type === "video" || type === "image"
-        ? ""
-        : ld.articleBody || extractArticle(html);
+      contentRank(extracted) >= contentRank(ldBody) ? extracted : ldBody;
     const body =
-      article.length > 160
+      article.length > 80
         ? article
         : description
           ? description.slice(0, 4000)
@@ -231,7 +233,7 @@ async function parseUrlHtml(url: URL): Promise<ParsedClip> {
       excerpt: description
         ? description.slice(0, 400)
         : body
-          ? body.slice(0, 180)
+          ? body.replace(/^#{1,4}\s+/gm, "").replace(/\s+/g, " ").trim().slice(0, 180)
           : null,
       content: body ? body.slice(0, 20_000) : null,
       site_name: siteName.slice(0, 120),
@@ -299,7 +301,7 @@ function mergeParsed(base: ParsedClip, extra: Partial<ParsedClip>): ParsedClip {
         ? extra.title
         : base.title;
   const content =
-    extra.content && extra.content.length > (base.content?.length ?? 0)
+    contentRank(extra.content) > contentRank(base.content)
       ? extra.content
       : base.content;
   const excerpt = extra.excerpt && (!base.excerpt || base.excerpt.length < 40)
@@ -454,7 +456,8 @@ export function extractArticle(html: string): string {
     .replace(/<script[\s\S]*?<\/script>/gi, " ")
     .replace(/<style[\s\S]*?<\/style>/gi, " ")
     .replace(/<noscript[\s\S]*?<\/noscript>/gi, " ")
-    .replace(/<!--[\s\S]*?-->/g, " ");
+    .replace(/<!--[\s\S]*?-->/g, " ")
+    .replace(/<br\s*\/?>/gi, "\n");
 
   const article =
     cleaned.match(/<article\b[^>]*>([\s\S]*?)<\/article>/i)?.[1] ||
@@ -462,18 +465,54 @@ export function extractArticle(html: string): string {
     cleaned;
 
   const blocks: string[] = [];
-  const re = /<(p|h1|h2|h3|h4|li|blockquote)(\s[^>]*)?>([\s\S]*?)<\/\1>/gi;
+  const list: string[] = [];
+  const re = /<(p|h1|h2|h3|h4|h5|li|blockquote)(\s[^>]*)?>([\s\S]*?)<\/\1>/gi;
+
+  function flushList() {
+    if (!list.length) return;
+    blocks.push(list.join("\n"));
+    list.length = 0;
+  }
+
   let match: RegExpExecArray | null;
   while ((match = re.exec(article))) {
     const tag = match[1].toLowerCase();
-    const text = stripTags(match[3]).trim();
+    const inner = match[3];
+    const text = stripTags(inner).trim();
     if (text.length < 2) continue;
     if (isBoilerplate(text)) continue;
-    if (text.length < 28 && !tag.startsWith("h")) continue;
+
+    if (tag === "li") {
+      if (text.length < 2) continue;
+      list.push(`- ${text}`);
+      continue;
+    }
+
+    flushList();
+
+    if (tag === "blockquote") {
+      if (text.length < 8) continue;
+      blocks.push(`> ${text}`);
+      continue;
+    }
+
+    if (tag.startsWith("h") || isBoldHeading(inner, text)) {
+      const level = tag === "h1" || tag === "h2" ? 2 : tag === "h3" ? 3 : 4;
+      blocks.push(`${"#".repeat(level)} ${text}`);
+      continue;
+    }
+
+    if (text.length < 28) continue;
     blocks.push(text);
     if (blocks.join("\n\n").length > 18_000) break;
   }
+  flushList();
   return blocks.join("\n\n").slice(0, 20_000);
+}
+
+function isBoldHeading(inner: string, text: string): boolean {
+  if (text.length < 2 || text.length > 42) return false;
+  return /^<(strong|b)(\s[^>]*)?>[\s\S]*<\/\1>$/i.test(inner.trim());
 }
 
 export async function fetchArticle(

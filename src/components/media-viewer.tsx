@@ -2,6 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
+import { ArticleBody } from "@/components/article-body";
 import type { Clip } from "@/lib/clip-types";
 import { readSource } from "@/lib/clips-api";
 import { videoEmbed } from "@/lib/embed";
@@ -86,7 +87,6 @@ function ArticleReader({ clip }: { clip: Clip }) {
   const body = (data.content || data.excerpt || "").trim();
   const thin = body.length < 280;
   const url = safeHttpUrl(data.url);
-  const paragraphs = body.split(/\n{2,}/).map((part) => part.trim()).filter(Boolean);
 
   return (
     <section className="overflow-hidden rounded-2xl bg-surface shadow-card">
@@ -94,17 +94,9 @@ function ArticleReader({ clip }: { clip: Clip }) {
         <p className="px-5 py-8 text-subhead text-muted sm:px-7">正在载入正文…</p>
       ) : null}
 
-      {paragraphs.length ? (
-        <div className="space-y-4 px-5 py-6 sm:px-7">
-          {paragraphs.map((para, index) => (
-            <p key={index} className="text-[17px] leading-[1.7] text-fg">
-              {para}
-            </p>
-          ))}
-        </div>
-      ) : null}
+      {body ? <ArticleBody markdown={body} title={clip.title} /> : null}
 
-      {thin && url && !frameFailed && paragraphs.length === 0 ? (
+      {thin && url && !frameFailed && !body ? (
         <div className="border-t border-border/70">
           <iframe
             src={url}
@@ -117,7 +109,7 @@ function ArticleReader({ clip }: { clip: Clip }) {
         </div>
       ) : null}
 
-      {thin && !source.isPending && paragraphs.length === 0 ? (
+      {thin && !source.isPending && !body ? (
         <p className="px-5 py-10 text-center text-subhead text-muted">
           这篇暂时读不进来，用下面的原链接打开。
         </p>
