@@ -3,9 +3,10 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Pin } from "lucide-react";
 import { useState, type KeyboardEvent } from "react";
+import { SwipeRow } from "@/components/swipe-row";
 import { haptic } from "@/lib/apple-motion";
 import { notePreview, noteTitle, type Note } from "@/lib/clip-types";
-import { createNote, listNotes, updateNote } from "@/lib/notes-api";
+import { createNote, deleteNote, listNotes, updateNote } from "@/lib/notes-api";
 import { cn } from "@/lib/utils";
 
 export function NotesRail({ compact = false }: { compact?: boolean }) {
@@ -34,6 +35,16 @@ export function NotesRail({ compact = false }: { compact?: boolean }) {
     },
   });
 
+  const remove = useMutation({
+    mutationFn: (id: number) => deleteNote({ data: { id } }),
+    onSuccess: (_result, id) => {
+      qc.setQueryData<Note[]>(["notes"], (current) =>
+        (current ?? []).filter((note) => note.id !== id),
+      );
+      qc.invalidateQueries({ queryKey: ["notes"] });
+    },
+  });
+
   function submit() {
     const next = draft.trim();
     if (!next || create.isPending) return;
@@ -46,6 +57,8 @@ export function NotesRail({ compact = false }: { compact?: boolean }) {
       submit();
     }
   }
+
+  const list = pinned.concat(rest);
 
   return (
     <div className={cn("flex w-full flex-col gap-3", compact ? "" : "h-full")}>
@@ -73,29 +86,20 @@ export function NotesRail({ compact = false }: { compact?: boolean }) {
 
       <div
         className={cn(
-          "overflow-y-auto rounded-2xl bg-fill px-1.5 py-2",
-          compact ? "max-h-52" : "min-h-0 flex-1",
+          "min-h-0 overflow-y-auto",
+          compact ? "max-h-52" : "flex-1",
         )}
       >
-        {pinned.length ? (
-          <ul>
-            {pinned.map((note) => (
-              <NoteRow
-                key={note.id}
-                note={note}
-                onPin={() => pin.mutate({ id: note.id, pinned: false })}
-              />
-            ))}
-          </ul>
-        ) : null}
-        {rest.length ? (
-          <ul className={pinned.length ? "mt-1" : undefined}>
-            {rest.map((note) => (
-              <NoteRow
-                key={note.id}
-                note={note}
-                onPin={() => pin.mutate({ id: note.id, pinned: true })}
-              />
+        {list.length ? (
+          <ul className="flex flex-col gap-2">
+            {list.map((note) => (
+              <li key={note.id}>
+                <NoteRow
+                  note={note}
+                  onPin={() => pin.mutate({ id: note.id, pinned: !note.pinned })}
+                  onDelete={() => remove.mutate(note.id)}
+                />
+              </li>
             ))}
           </ul>
         ) : null}
@@ -104,27 +108,42 @@ export function NotesRail({ compact = false }: { compact?: boolean }) {
   );
 }
 
-function NoteRow({ note, onPin }: { note: Note; onPin: () => void }) {
+function NoteRow({
+  note,
+  onPin,
+  onDelete,
+}: {
+  note: Note;
+  onPin: () => void;
+  onDelete: () => void;
+}) {
   const preview = notePreview(note.body);
   return (
-    <div className="group flex items-start gap-0.5 rounded-xl pr-1 hover:bg-surface">
-      <button
-        type="button"
-        onClick={onPin}
-        className={cn(
-          "mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full transition-colors",
-          note.pinned ? "text-fg" : "text-subtle lg:opacity-0 lg:group-hover:opacity-100 hover:text-fg",
-        )}
-        aria-label={note.pinned ? "取消固定" : "固定"}
-      >
-        <Pin className="size-3.5" fill={note.pinned ? "currentColor" : "none"} />
-      </button>
-      <div className="min-w-0 flex-1 py-2 pr-2">
-        <p className="truncate text-subhead font-medium text-fg">{noteTitle(note.body)}</p>
-        {preview ? (
-          <p className="mt-0.5 line-clamp-2 text-footnote leading-relaxed text-muted">{preview}</p>
-        ) : null}
+    <SwipeRow onDelete={onDelete}>
+      <div className="overflow-hidden rounded-2xl bg-surface shadow-card">
+        <div className="flex items-start gap-0.5">
+          <button
+            type="button"
+            data-swipe-ignore
+            onClick={onPin}
+            className={cn(
+              "mt-0.5 ml-0.5 flex size-8 shrink-0 items-center justify-center rounded-full",
+              note.pinned ? "text-fg" : "text-subtle",
+            )}
+            aria-label={note.pinned ? "取消固定" : "固定"}
+          >
+            <Pin className="size-3.5" fill={note.pinned ? "currentColor" : "none"} />
+          </button>
+          <div className="min-w-0 flex-1 py-2 pr-3">
+            <p className="truncate text-subhead font-medium text-fg">{noteTitle(note.body)}</p>
+            {preview ? (
+              <p className="mt-0.5 line-clamp-2 text-footnote leading-relaxed text-muted">
+                {preview}
+              </p>
+            ) : null}
+          </div>
+        </div>
       </div>
-    </div>
+    </SwipeRow>
   );
 }

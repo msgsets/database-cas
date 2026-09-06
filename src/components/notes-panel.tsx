@@ -1,9 +1,8 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Pin, Trash2 } from "lucide-react";
+import { Pin } from "lucide-react";
 import { useEffect, useState, type KeyboardEvent } from "react";
-import { toast } from "sonner";
 import { SwipeRow } from "@/components/swipe-row";
 import { haptic } from "@/lib/apple-motion";
 import { notePreview, noteTitle, type Note } from "@/lib/clip-types";
@@ -50,11 +49,12 @@ export function NotesPanel({
   const remove = useMutation({
     mutationFn: (id: number) => deleteNote({ data: { id } }),
     onSuccess: (_result, id) => {
-      haptic(16);
+      qc.setQueryData<Note[]>(["notes"], (current) =>
+        (current ?? []).filter((note) => note.id !== id),
+      );
       qc.invalidateQueries({ queryKey: ["notes"] });
       if (openId === id) setOpenId(null);
       if (selectedId === id) onSelect?.(null);
-      toast.success("已删除");
     },
   });
 
@@ -101,34 +101,23 @@ export function NotesPanel({
         </div>
       </div>
 
-      <div className="overflow-hidden rounded-2xl bg-surface shadow-card">
-        {notes.length === 0 ? (
-          <p className="px-4 py-12 text-center text-subhead text-muted">还没有笔记</p>
-        ) : (
-          <ul>
-            {pinned.map((note) => (
+      {notes.length === 0 ? (
+        <p className="px-4 py-12 text-center text-subhead text-muted">还没有笔记</p>
+      ) : (
+        <ul className="flex flex-col gap-3">
+          {pinned.concat(rest).map((note) => (
+            <li key={note.id}>
               <NoteRow
-                key={note.id}
                 note={note}
                 expanded={openId === note.id}
                 onOpen={() => toggle(note.id)}
-                onPin={() => pin.mutate({ id: note.id, pinned: false })}
+                onPin={() => pin.mutate({ id: note.id, pinned: !note.pinned })}
                 onDelete={() => remove.mutate(note.id)}
               />
-            ))}
-            {rest.map((note) => (
-              <NoteRow
-                key={note.id}
-                note={note}
-                expanded={openId === note.id}
-                onOpen={() => toggle(note.id)}
-                onPin={() => pin.mutate({ id: note.id, pinned: true })}
-                onDelete={() => remove.mutate(note.id)}
-              />
-            ))}
-          </ul>
-        )}
-      </div>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }
@@ -176,25 +165,16 @@ function NoteRow({
   }
 
   return (
-    <li className="border-b border-border/50 last:border-b-0">
-      <SwipeRow
-        action={
+    <SwipeRow onDelete={onDelete}>
+      <div className="lift overflow-hidden rounded-2xl bg-surface shadow-card">
+        <div className="flex items-start gap-0.5">
           <button
             type="button"
-            onClick={onDelete}
-            className="flex h-full w-full items-center justify-center bg-danger text-sm font-semibold text-primary-fg"
-          >
-            删除
-          </button>
-        }
-      >
-        <div className={cn("flex items-start gap-1 px-1", expanded ? "bg-fill/60" : "bg-surface")}>
-          <button
-            type="button"
+            data-swipe-ignore
             onClick={onPin}
             className={cn(
-              "mt-1 flex size-10 shrink-0 items-center justify-center rounded-full",
-              note.pinned ? "text-fg" : "text-subtle hover:text-fg",
+              "mt-1 ml-1 flex size-10 shrink-0 items-center justify-center rounded-full",
+              note.pinned ? "text-fg" : "text-subtle",
             )}
             aria-label={note.pinned ? "取消固定" : "固定"}
           >
@@ -207,13 +187,13 @@ function NoteRow({
               onBlur={persist}
               onKeyDown={onEditorKey}
               autoFocus
-              className="min-h-[140px] min-w-0 flex-1 resize-none bg-transparent py-3 pr-3 text-body leading-relaxed text-fg outline-none"
+              className="min-h-[140px] min-w-0 flex-1 resize-none touch-pan-y bg-transparent py-3 pr-4 text-body leading-relaxed text-fg outline-none"
             />
           ) : (
             <button
               type="button"
               onClick={onOpen}
-              className="min-w-0 flex-1 py-3 pr-3 text-left"
+              className="min-w-0 flex-1 py-3 pr-4 text-left"
             >
               <p className="truncate text-subhead font-semibold tracking-tight text-fg">
                 {noteTitle(note.body)}
@@ -225,16 +205,8 @@ function NoteRow({
               ) : null}
             </button>
           )}
-          <button
-            type="button"
-            onClick={onDelete}
-            className="mt-1 hidden size-10 shrink-0 items-center justify-center rounded-full text-subtle hover:text-danger sm:flex"
-            aria-label="删除"
-          >
-            <Trash2 className="size-3.5" />
-          </button>
         </div>
-      </SwipeRow>
-    </li>
+      </div>
+    </SwipeRow>
   );
 }
