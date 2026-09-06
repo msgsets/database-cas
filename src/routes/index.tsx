@@ -1,14 +1,13 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { AppShell } from "@/components/app-shell";
 import { CaptureCard } from "@/components/capture-card";
 import { ClipCard } from "@/components/clip-card";
 import { NotesRail } from "@/components/notes-rail";
 import { SearchEntry } from "@/components/search-entry";
 import { listClips } from "@/lib/clips-api";
-import { DEFAULT_LIBRARY_SEARCH } from "@/lib/clip-types";
 
 export const Route = createFileRoute("/")({
   loader: () => listClips({ data: { limit: 6 } }),
@@ -35,15 +34,8 @@ function Home() {
         </div>
 
         <section className="mt-10">
-          <div className="mb-4 flex items-center gap-4">
-            <SearchEntry className="min-w-0 flex-1" />
-            <Link
-              to="/library"
-              search={DEFAULT_LIBRARY_SEARCH}
-              className="font-en flex h-11 shrink-0 items-center text-[15px] text-fg"
-            >
-              DATABASE
-            </Link>
+          <div className="mb-4">
+            <SearchEntry />
           </div>
           {recent.isPending ? (
             <div className="grid gap-4 sm:grid-cols-2">

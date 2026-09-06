@@ -30,8 +30,8 @@ export function SearchEntry({ className }: { className?: string }) {
       <input
         value={q}
         onChange={(event) => setQ(event.target.value)}
-        placeholder="查找"
-        aria-label="查找"
+        placeholder=""
+        aria-label="Search"
         className="h-full min-w-0 flex-1 bg-transparent px-3 text-body text-fg outline-none placeholder:text-subtle"
       />
     </form>
