@@ -5,18 +5,20 @@ import { Trash2 } from "lucide-react";
 import { useEffect, useId, useRef, type PointerEvent, type ReactNode } from "react";
 import { haptic, project, rubberband, springFlick, springUi } from "@/lib/apple-motion";
 
-const REVEAL = 76;
+const REVEAL = { compact: 72, notes: 76 } as const;
 const LOCK = 10;
 
 type SwipeRowProps = {
   children: ReactNode;
   onDelete: () => void;
+  compact?: boolean;
 };
 
 const closers = new Map<string, () => void>();
 
-export function SwipeRow({ children, onDelete }: SwipeRowProps) {
+export function SwipeRow({ children, onDelete, compact = false }: SwipeRowProps) {
   const id = useId();
+  const reveal = compact ? REVEAL.compact : REVEAL.notes;
   const x = useMotionValue(0);
   const origin = useRef(0);
   const startX = useRef(0);
@@ -27,6 +29,8 @@ export function SwipeRow({ children, onDelete }: SwipeRowProps) {
   const opened = useRef(false);
   const suppressClick = useRef(false);
   const deleting = useRef(false);
+  const revealRef = useRef(reveal);
+  revealRef.current = reveal;
 
   function velocity(): number {
     const samples = last.current;
@@ -49,7 +53,7 @@ export function SwipeRow({ children, onDelete }: SwipeRowProps) {
     for (const [other, fn] of closers) {
       if (other !== id) fn();
     }
-    animate(x, -REVEAL, springUi);
+    animate(x, -revealRef.current, springUi);
   }
 
   async function commit() {
@@ -119,29 +123,48 @@ export function SwipeRow({ children, onDelete }: SwipeRowProps) {
     const v = velocity();
     const current = x.get();
     const projected = current + project(v);
+    const snap = revealRef.current;
     if (projected < -width.current * 0.42 || v < -1100) {
       void commit();
       return;
     }
-    if (v < -180 || projected < -REVEAL * 0.45) open();
+    if (v < -180 || projected < -snap * 0.45) open();
     else close();
   }
 
   return (
     <div className="relative">
-      <div className="absolute inset-y-0 right-0 z-0 flex items-center">
-        <button
-          type="button"
-          data-swipe-ignore
-          onClick={() => void commit()}
-          className="flex w-[76px] flex-col items-center justify-center gap-1 active:scale-95"
-          aria-label="删除"
-        >
-          <span className="flex size-[54px] items-center justify-center rounded-full bg-danger text-white">
-            <Trash2 className="size-5" strokeWidth={1.8} />
-          </span>
-          <span className="text-[11px] font-medium leading-none text-fg">删除</span>
-        </button>
+      <div
+        className={
+          compact
+            ? "absolute inset-y-0 right-0 z-0 flex w-[72px] items-stretch"
+            : "absolute inset-y-0 right-0 z-0 flex items-center"
+        }
+      >
+        {compact ? (
+          <button
+            type="button"
+            data-swipe-ignore
+            onClick={() => void commit()}
+            className="flex h-full w-full items-center justify-center rounded-2xl bg-danger text-[13px] font-medium text-white active:opacity-90"
+            aria-label="删除"
+          >
+            删除
+          </button>
+        ) : (
+          <button
+            type="button"
+            data-swipe-ignore
+            onClick={() => void commit()}
+            className="flex w-[76px] flex-col items-center justify-center gap-1 active:scale-95"
+            aria-label="删除"
+          >
+            <span className="flex size-[54px] items-center justify-center rounded-full bg-danger text-white">
+              <Trash2 className="size-5" strokeWidth={1.8} />
+            </span>
+            <span className="text-[11px] font-medium leading-none text-fg">删除</span>
+          </button>
+        )}
       </div>
       <motion.div
         style={{ x }}

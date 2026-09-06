@@ -155,7 +155,7 @@ function NoteRow({
   }
 
   return (
-    <SwipeRow onDelete={onDelete}>
+    <SwipeRow compact onDelete={onDelete}>
       <div className="overflow-hidden rounded-2xl bg-surface shadow-card">
         <div className={cn("flex gap-0.5", expanded ? "items-start" : "items-center")}>
           <button
