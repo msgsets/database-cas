@@ -39,13 +39,6 @@ create table if not exists notes (
 
 create index if not exists notes_updated_at_idx on notes (updated_at desc);
 
-insert into tags (name) values
-  ('设计'),
-  ('阅读'),
-  ('灵感'),
-  ('工作')
-on conflict (name) do nothing;
-
 insert into clips (kind, type, url, title, excerpt, content, site_name, image_url) values
   (
     'url',
@@ -97,30 +90,6 @@ insert into clips (kind, type, url, title, excerpt, content, site_name, image_ur
     null,
     null
   );
-
-insert into clip_tags (clip_id, tag_id)
-select c.id, t.id
-from clips c
-join tags t on t.name = '设计'
-where c.title in ('Human Interface Guidelines', 'Designed by Apple', '清晨的书桌');
-
-insert into clip_tags (clip_id, tag_id)
-select c.id, t.id
-from clips c
-join tags t on t.name = '阅读'
-where c.title in ('Human Interface Guidelines', 'Apple');
-
-insert into clip_tags (clip_id, tag_id)
-select c.id, t.id
-from clips c
-join tags t on t.name = '灵感'
-where c.title in ('Designed by Apple', '清晨的书桌');
-
-insert into clip_tags (clip_id, tag_id)
-select c.id, t.id
-from clips c
-join tags t on t.name = '工作'
-where c.title in ('关于收集');
 
 insert into notes (body) values
   ('下午把首页入口再收紧一点，三个入口不要抢。'),
