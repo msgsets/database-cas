@@ -19,12 +19,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-dvh bg-bg text-fg">
       <header className="material sticky top-0 z-30">
-        <nav
-          className={cn(
-            "flex h-12 items-center justify-between px-4 sm:h-14 sm:px-6",
-            onHome ? "lg:px-12" : "mx-auto max-w-3xl",
-          )}
-        >
+        <nav className="flex h-12 items-center justify-between px-4 sm:h-14 sm:px-6 lg:px-12">
           <Link
             to={left.to}
             className={cn(
@@ -61,7 +56,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           </aside>
         </div>
       ) : (
-        <div className="px-4 pb-[calc(2rem+env(safe-area-inset-bottom))] pt-4 sm:px-6 lg:pb-12">
+        <div className="px-4 pb-[calc(2rem+env(safe-area-inset-bottom))] pt-4 sm:px-6 lg:px-12 lg:pb-12">
           {children}
         </div>
       )}
