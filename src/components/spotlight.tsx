@@ -11,7 +11,7 @@ import { springQuick, springUi, usePrefersReducedMotion } from "@/lib/apple-moti
 import { cn } from "@/lib/utils";
 import { TypeBadge } from "@/components/type-badge";
 
-const EVENT = "folio:spotlight";
+const EVENT = "database:spotlight";
 
 export function openSpotlight() {
   window.dispatchEvent(new Event(EVENT));

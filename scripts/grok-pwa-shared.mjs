@@ -158,7 +158,9 @@ export function renderInstallPageHtml(template, { host, url } = {}) {
 }
 
 export function renderWebManifest(hostHeader) {
-  const name = appNameFromHost(hostHeader);
+  const hostName = appNameFromHost(hostHeader);
+  const siteTitle = String(readOgSite().title ?? "").trim();
+  const name = hostName === DEFAULT_APP_NAME && siteTitle ? siteTitle : hostName;
   return JSON.stringify(
     {
       name,
@@ -167,8 +169,8 @@ export function renderWebManifest(hostHeader) {
       start_url: "/",
       scope: "/",
       display: "standalone",
-      background_color: "#000000",
-      theme_color: "#000000",
+      background_color: "#f5f5f7",
+      theme_color: "#f5f5f7",
       icons: [
         {
           src: "/__grok/icon-180.png",

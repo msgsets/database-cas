@@ -1,4 +1,4 @@
--- Folio: clips (links/text), tags, and quick notes. Unowned rows (auth off).
+-- Database: clips (links/text), tags, and quick notes. Unowned rows (auth off).
 
 create table if not exists clips (
   id         serial primary key,

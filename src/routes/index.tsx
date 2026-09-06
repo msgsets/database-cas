@@ -2,27 +2,39 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import { CaptureCard } from "@/components/capture-card";
 import { ClipCard } from "@/components/clip-card";
 import { NotesRail } from "@/components/notes-rail";
 import { SearchEntry } from "@/components/search-entry";
 import { listClips } from "@/lib/clips-api";
+import { readRecentClips, writeRecentClips, type RecentClips } from "@/lib/home-cache";
 
 export const Route = createFileRoute("/")({
-  loader: () => listClips({ data: { limit: 6 } }),
   component: Home,
 });
 
 function Home() {
-  const initial = Route.useLoaderData();
+  const [cached, setCached] = useState<RecentClips | undefined>();
+
+  useEffect(() => {
+    setCached(readRecentClips());
+  }, []);
+
   const recent = useQuery({
     queryKey: ["clips", "recent"],
-    queryFn: () => listClips({ data: { limit: 6 } }),
-    initialData: initial,
+    queryFn: async () => {
+      const data = await listClips({ data: { limit: 6 } });
+      writeRecentClips(data);
+      return data;
+    },
+    placeholderData: cached,
+    staleTime: 30_000,
   });
 
-  const items = recent.data?.items ?? [];
+  const items = recent.data?.items ?? cached?.items ?? [];
+  const waiting = recent.isPending && items.length === 0;
 
   return (
     <AppShell>
@@ -35,7 +47,7 @@ function Home() {
 
         <section className="mt-4 space-y-4">
           <SearchEntry />
-          {recent.isPending ? (
+          {waiting ? (
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="h-32 rounded-2xl bg-fill" />
               <div className="h-32 rounded-2xl bg-fill" />
