@@ -35,7 +35,7 @@ export function ClipCard({
         <div
           className={cn(
             "relative overflow-hidden bg-fill",
-            dense ? "aspect-[16/5]" : compact ? "aspect-[12/5]" : "aspect-[16/10]",
+            dense ? "aspect-[16/8]" : compact ? "aspect-[12/5]" : "aspect-[16/10]",
           )}
         >
           <img
@@ -64,7 +64,7 @@ export function ClipCard({
       <div
         className={cn(
           "flex flex-1 flex-col",
-          dense ? "gap-1 p-2.5" : compact ? "gap-1.5 p-3" : "gap-2.5 p-4",
+          dense ? "gap-1.5 p-3" : compact ? "gap-1.5 p-3" : "gap-2.5 p-4",
         )}
       >
         <div className="flex items-center justify-between gap-3">
@@ -78,7 +78,7 @@ export function ClipCard({
             className={cn(
               "font-semibold leading-snug tracking-tight text-fg",
               dense
-                ? "line-clamp-1 text-[14px]"
+                ? "line-clamp-2 text-[15px]"
                 : compact
                   ? "line-clamp-1 text-[15px]"
                   : "line-clamp-2 text-[17px]",

@@ -63,9 +63,9 @@ function LibraryPage() {
 
         {clipsQuery.isPending ? (
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-            <div className="h-24 rounded-2xl bg-fill" />
-            <div className="h-24 rounded-2xl bg-fill" />
-            <div className="h-24 rounded-2xl bg-fill" />
+            <div className="h-36 rounded-2xl bg-fill" />
+            <div className="h-36 rounded-2xl bg-fill" />
+            <div className="h-36 rounded-2xl bg-fill" />
           </div>
         ) : items.length ? (
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
