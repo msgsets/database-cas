@@ -18,7 +18,7 @@ export function ClipCard({ clip }: { clip: Clip }) {
       to="/clips/$id"
       params={{ id: String(clip.id) }}
       className={cn(
-        "group flex flex-col overflow-hidden rounded-2xl bg-surface shadow-card",
+        "group lift flex flex-col overflow-hidden rounded-2xl bg-surface shadow-card",
         "pressable",
       )}
     >

@@ -6,6 +6,7 @@ import { AppShell } from "@/components/app-shell";
 import { CaptureCard } from "@/components/capture-card";
 import { ClipCard } from "@/components/clip-card";
 import { NotesRail } from "@/components/notes-rail";
+import { SearchEntry } from "@/components/search-entry";
 import { listClips } from "@/lib/clips-api";
 import { DEFAULT_LIBRARY_SEARCH } from "@/lib/clip-types";
 
@@ -31,6 +32,10 @@ function Home() {
 
         <div className="mt-4 lg:hidden">
           <NotesRail compact />
+        </div>
+
+        <div className="mt-4">
+          <SearchEntry />
         </div>
 
         <section className="mt-10">

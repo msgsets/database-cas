@@ -7,7 +7,7 @@ export function Input({ className, ...props }: InputHTMLAttributes<HTMLInputElem
       className={cn(
         "h-11 w-full rounded-xl bg-fill px-4 text-body text-fg outline-none placeholder:text-subtle",
         "transition-[box-shadow,background-color] duration-150",
-        "focus:bg-surface focus:shadow-[0_0_0_4px_rgb(0_113_227_/_0.18)]",
+        "focus:bg-surface focus:shadow-[0_0_0_4px_rgb(29_29_31_/_0.08)]",
         className,
       )}
       {...props}

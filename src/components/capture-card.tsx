@@ -47,13 +47,21 @@ export function CaptureCard() {
   const canSave = Boolean(value.trim()) && !mutation.isPending;
 
   return (
-    <section className="rounded-2xl bg-surface p-5 shadow-card sm:p-6">
-      <div className="mb-1 flex justify-end">
+    <section className="lift rounded-2xl bg-surface p-5 shadow-card sm:p-6">
+      <textarea
+        value={value}
+        onChange={(event) => setValue(event.target.value)}
+        onKeyDown={onKeyDown}
+        placeholder="粘贴链接，或写一段文字…"
+        rows={5}
+        className="min-h-[140px] w-full resize-none bg-transparent text-body leading-relaxed text-fg outline-none placeholder:text-subtle"
+      />
+      <div className="mt-4 flex justify-end">
         <button
           type="button"
           onClick={submit}
           disabled={!canSave}
-          className="font-en h-9 rounded-full px-3.5 text-[17px] text-fg transition-opacity duration-100 disabled:opacity-30"
+          className="font-en inline-flex h-11 items-center rounded-full bg-fg px-5 text-[17px] text-bg transition-opacity duration-100 disabled:opacity-30"
         >
           {mutation.isPending ? (
             <Loader2 className="size-4 animate-spin" />
@@ -62,14 +70,6 @@ export function CaptureCard() {
           )}
         </button>
       </div>
-      <textarea
-        value={value}
-        onChange={(event) => setValue(event.target.value)}
-        onKeyDown={onKeyDown}
-        placeholder="粘贴链接，或写一段文字…"
-        rows={5}
-        className="min-h-[132px] w-full resize-none bg-transparent text-body leading-relaxed text-fg outline-none placeholder:text-subtle"
-      />
       {last ? (
         <Link
           to="/clips/$id"

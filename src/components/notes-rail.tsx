@@ -49,7 +49,7 @@ export function NotesRail({ compact = false }: { compact?: boolean }) {
 
   return (
     <div className={cn("flex w-full flex-col gap-3", compact ? "" : "h-full")}>
-      <div className="shrink-0 rounded-2xl bg-surface p-4 shadow-card">
+      <div className="lift shrink-0 rounded-2xl bg-surface p-4 shadow-card">
         <textarea
           value={draft}
           onChange={(event) => setDraft(event.target.value)}
@@ -64,7 +64,7 @@ export function NotesRail({ compact = false }: { compact?: boolean }) {
             type="button"
             onClick={submit}
             disabled={!draft.trim() || create.isPending}
-            className="font-en h-9 rounded-full px-3.5 text-[17px] text-fg transition-opacity duration-100 disabled:opacity-30"
+            className="font-en inline-flex h-11 items-center rounded-full bg-fg px-5 text-[17px] text-bg transition-opacity duration-100 disabled:opacity-30"
           >
             save
           </button>
