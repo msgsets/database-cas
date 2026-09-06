@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Pin } from "lucide-react";
-import { useState, type KeyboardEvent } from "react";
+import { useEffect, useState, type KeyboardEvent } from "react";
 import { SwipeRow } from "@/components/swipe-row";
 import { haptic } from "@/lib/apple-motion";
 import { notePreview, noteTitle, type Note } from "@/lib/clip-types";
@@ -16,6 +16,7 @@ export function NotesRail({ compact = false }: { compact?: boolean }) {
   const pinned = notes.filter((note) => note.pinned);
   const rest = notes.filter((note) => !note.pinned);
   const [draft, setDraft] = useState("");
+  const [openId, setOpenId] = useState<number | null>(null);
 
   const create = useMutation({
     mutationFn: (body: string) => createNote({ data: { body } }),
@@ -42,6 +43,7 @@ export function NotesRail({ compact = false }: { compact?: boolean }) {
         (current ?? []).filter((note) => note.id !== id),
       );
       qc.invalidateQueries({ queryKey: ["notes"] });
+      if (openId === id) setOpenId(null);
     },
   });
 
@@ -87,7 +89,7 @@ export function NotesRail({ compact = false }: { compact?: boolean }) {
       <div
         className={cn(
           "min-h-0 overflow-y-auto",
-          compact ? "max-h-52" : "flex-1",
+          compact ? (openId ? "max-h-[min(28rem,70dvh)]" : "max-h-52") : "flex-1",
         )}
       >
         {list.length ? (
@@ -96,6 +98,8 @@ export function NotesRail({ compact = false }: { compact?: boolean }) {
               <li key={note.id}>
                 <NoteRow
                   note={note}
+                  expanded={openId === note.id}
+                  onOpen={() => setOpenId((current) => (current === note.id ? null : note.id))}
                   onPin={() => pin.mutate({ id: note.id, pinned: !note.pinned })}
                   onDelete={() => remove.mutate(note.id)}
                 />
@@ -110,38 +114,82 @@ export function NotesRail({ compact = false }: { compact?: boolean }) {
 
 function NoteRow({
   note,
+  expanded,
+  onOpen,
   onPin,
   onDelete,
 }: {
   note: Note;
+  expanded: boolean;
+  onOpen: () => void;
   onPin: () => void;
   onDelete: () => void;
 }) {
+  const qc = useQueryClient();
   const preview = notePreview(note.body);
+  const [body, setBody] = useState(note.body);
+
+  useEffect(() => {
+    setBody(note.body);
+  }, [note.body, note.id]);
+
+  const save = useMutation({
+    mutationFn: (next: string) => updateNote({ data: { id: note.id, body: next } }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["notes"] });
+    },
+  });
+
+  function persist() {
+    const next = body.trim();
+    if (!next || next === note.body) return;
+    haptic(8);
+    save.mutate(next);
+  }
+
+  function onEditorKey(event: KeyboardEvent<HTMLTextAreaElement>) {
+    if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
+      event.preventDefault();
+      persist();
+    }
+  }
+
   return (
     <SwipeRow onDelete={onDelete}>
       <div className="overflow-hidden rounded-2xl bg-surface shadow-card">
-        <div className="flex items-start gap-0.5">
+        <div className={cn("flex gap-0.5", expanded ? "items-start" : "items-center")}>
           <button
             type="button"
             data-swipe-ignore
             onClick={onPin}
             className={cn(
-              "mt-0.5 ml-0.5 flex size-8 shrink-0 items-center justify-center rounded-full",
+              "ml-0.5 flex size-8 shrink-0 items-center justify-center rounded-full",
+              expanded && "mt-2",
               note.pinned ? "text-fg" : "text-subtle",
             )}
             aria-label={note.pinned ? "取消固定" : "固定"}
           >
             <Pin className="size-3.5" fill={note.pinned ? "currentColor" : "none"} />
           </button>
-          <div className="min-w-0 flex-1 py-2 pr-3">
-            <p className="truncate text-subhead font-medium text-fg">{noteTitle(note.body)}</p>
-            {preview ? (
-              <p className="mt-0.5 line-clamp-2 text-footnote leading-relaxed text-muted">
-                {preview}
-              </p>
-            ) : null}
-          </div>
+          {expanded ? (
+            <textarea
+              value={body}
+              onChange={(event) => setBody(event.target.value)}
+              onBlur={persist}
+              onKeyDown={onEditorKey}
+              autoFocus
+              className="min-h-[140px] min-w-0 flex-1 resize-none touch-pan-y bg-transparent py-3 pr-3 text-body leading-relaxed text-fg outline-none"
+            />
+          ) : (
+            <button type="button" onClick={onOpen} className="min-w-0 flex-1 py-2 pr-3 text-left">
+              <p className="truncate text-subhead font-medium text-fg">{noteTitle(note.body)}</p>
+              {preview ? (
+                <p className="mt-0.5 line-clamp-2 text-footnote leading-relaxed text-muted">
+                  {preview}
+                </p>
+              ) : null}
+            </button>
+          )}
         </div>
       </div>
     </SwipeRow>

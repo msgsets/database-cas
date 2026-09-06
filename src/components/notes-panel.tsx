@@ -167,13 +167,14 @@ function NoteRow({
   return (
     <SwipeRow onDelete={onDelete}>
       <div className="lift overflow-hidden rounded-2xl bg-surface shadow-card">
-        <div className="flex items-start gap-0.5">
+        <div className={cn("flex gap-0.5", expanded ? "items-start" : "items-center")}>
           <button
             type="button"
             data-swipe-ignore
             onClick={onPin}
             className={cn(
-              "mt-1 ml-1 flex size-10 shrink-0 items-center justify-center rounded-full",
+              "ml-1 flex size-10 shrink-0 items-center justify-center rounded-full",
+              expanded && "mt-1.5",
               note.pinned ? "text-fg" : "text-subtle",
             )}
             aria-label={note.pinned ? "取消固定" : "固定"}
