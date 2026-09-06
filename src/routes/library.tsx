@@ -62,15 +62,15 @@ function LibraryPage() {
         </div>
 
         {clipsQuery.isPending ? (
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-            <div className="h-56 rounded-2xl bg-fill" />
-            <div className="h-56 rounded-2xl bg-fill" />
-            <div className="h-56 rounded-2xl bg-fill" />
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <div className="h-24 rounded-2xl bg-fill" />
+            <div className="h-24 rounded-2xl bg-fill" />
+            <div className="h-24 rounded-2xl bg-fill" />
           </div>
         ) : items.length ? (
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             {items.map((clip) => (
-              <ClipCard key={clip.id} clip={clip} />
+              <ClipCard key={clip.id} clip={clip} dense />
             ))}
           </div>
         ) : (

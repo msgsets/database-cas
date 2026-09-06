@@ -8,10 +8,19 @@ import { relativeTime } from "@/lib/format";
 import { cn, safeHttpUrl } from "@/lib/utils";
 import { TypeBadge } from "@/components/type-badge";
 
-export function ClipCard({ clip, compact = false }: { clip: Clip; compact?: boolean }) {
+export function ClipCard({
+  clip,
+  compact = false,
+  dense = false,
+}: {
+  clip: Clip;
+  compact?: boolean;
+  dense?: boolean;
+}) {
   const image = safeHttpUrl(clip.image_url);
   const [broken, setBroken] = useState(false);
   const showImage = Boolean(image) && !broken;
+  const tight = compact || dense;
 
   return (
     <Link
@@ -26,7 +35,7 @@ export function ClipCard({ clip, compact = false }: { clip: Clip; compact?: bool
         <div
           className={cn(
             "relative overflow-hidden bg-fill",
-            compact ? "aspect-[12/5]" : "aspect-[16/10]",
+            dense ? "aspect-[16/5]" : compact ? "aspect-[12/5]" : "aspect-[16/10]",
           )}
         >
           <img
@@ -40,16 +49,24 @@ export function ClipCard({ clip, compact = false }: { clip: Clip; compact?: bool
               <span
                 className={cn(
                   "flex items-center justify-center rounded-full bg-fg/72 text-bg backdrop-blur-sm",
-                  compact ? "size-9" : "size-12",
+                  dense ? "size-8" : compact ? "size-9" : "size-12",
                 )}
               >
-                <Play className={compact ? "size-4 ml-0.5" : "size-5 ml-0.5"} fill="currentColor" />
+                <Play
+                  className={dense || compact ? "ml-0.5 size-4" : "ml-0.5 size-5"}
+                  fill="currentColor"
+                />
               </span>
             </span>
           ) : null}
         </div>
       ) : null}
-      <div className={cn("flex flex-1 flex-col", compact ? "gap-1.5 p-3" : "gap-2.5 p-4")}>
+      <div
+        className={cn(
+          "flex flex-1 flex-col",
+          dense ? "gap-1 p-2.5" : compact ? "gap-1.5 p-3" : "gap-2.5 p-4",
+        )}
+      >
         <div className="flex items-center justify-between gap-3">
           <TypeBadge type={clip.type} />
           <span className="text-caption tabular-nums tracking-wide text-subtle">
@@ -60,18 +77,22 @@ export function ClipCard({ clip, compact = false }: { clip: Clip; compact?: bool
           <h3
             className={cn(
               "font-semibold leading-snug tracking-tight text-fg",
-              compact ? "line-clamp-1 text-[15px]" : "line-clamp-2 text-[17px]",
+              dense
+                ? "line-clamp-1 text-[14px]"
+                : compact
+                  ? "line-clamp-1 text-[15px]"
+                  : "line-clamp-2 text-[17px]",
             )}
           >
             {clip.title}
           </h3>
-          {clip.excerpt && !compact ? (
+          {clip.excerpt && !tight ? (
             <p className="line-clamp-2 text-sm leading-relaxed text-muted">
               {clip.excerpt}
             </p>
           ) : null}
         </div>
-        {clip.tags.length && !compact ? (
+        {clip.tags.length && !tight ? (
           <div className="mt-auto flex flex-wrap gap-1.5 pt-1">
             {clip.tags.map((tag) => (
               <span
