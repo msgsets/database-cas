@@ -70,7 +70,6 @@ export function CaptureCard() {
         rows={5}
         className="min-h-[132px] w-full resize-none bg-transparent text-body leading-relaxed text-fg outline-none placeholder:text-subtle"
       />
-      <p className="mt-2 text-caption tracking-wide text-subtle">⌘↩ save</p>
       {last ? (
         <Link
           to="/clips/$id"

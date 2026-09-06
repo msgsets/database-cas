@@ -27,8 +27,6 @@ function Home() {
   return (
     <AppShell>
       <main className="w-full min-w-0">
-        <h1 className="font-en large-title mb-6">HOME</h1>
-
         <CaptureCard />
 
         <div className="mt-4 lg:hidden">
