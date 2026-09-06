@@ -94,7 +94,7 @@ export function NotesPanel({
             type="button"
             onClick={submit}
             disabled={!draft.trim() || create.isPending}
-            className="font-en inline-flex h-9 items-center rounded-full bg-fg px-4 text-[15px] text-bg transition-opacity duration-100 disabled:opacity-30"
+            className="font-en inline-flex h-9 items-center justify-center rounded-full bg-fg px-4 text-[15px] leading-none text-bg transition-opacity duration-100 disabled:opacity-30"
           >
             save
           </button>

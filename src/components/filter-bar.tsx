@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Search } from "lucide-react";
-import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
+import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { toast } from "sonner";
 import { TypeIcon } from "@/components/type-badge";
 import { Input } from "@/components/ui/input";
@@ -166,7 +166,7 @@ function Chip({
       type="button"
       onClick={onClick}
       className={cn(
-        "inline-flex h-9 items-center gap-1.5 rounded-full px-3 text-sm font-medium transition-colors duration-100",
+        "inline-flex h-8 items-center justify-center gap-1.5 rounded-full px-3 text-sm font-medium leading-none",
         active ? "bg-fg text-bg" : "bg-fill text-muted hover:bg-fill-2 hover:text-fg",
       )}
     >
@@ -184,43 +184,18 @@ function Segmented({
   options: { value: TimeFilter; label: string }[];
   onChange: (value: TimeFilter) => void;
 }) {
-  const refs = useRef<Record<string, HTMLButtonElement | null>>({});
-  const [pill, setPill] = useState({ left: 4, width: 0 });
-  const [ready, setReady] = useState(false);
-
-  useEffect(() => {
-    const el = refs.current[value];
-    if (!el) return;
-    const parent = el.parentElement;
-    if (!parent) return;
-    const parentBox = parent.getBoundingClientRect();
-    const box = el.getBoundingClientRect();
-    setPill({ left: box.left - parentBox.left, width: box.width });
-    requestAnimationFrame(() => setReady(true));
-  }, [value]);
-
   return (
-    <div className="relative inline-flex max-w-full overflow-x-auto rounded-full bg-fill p-1">
-      <span
-        aria-hidden
-        className="absolute top-1 bottom-1 rounded-full bg-surface shadow-sm"
-        style={{
-          width: pill.width,
-          transform: `translateX(${pill.left}px)`,
-          transition: ready ? "transform 250ms var(--ease-out-apple), width 250ms var(--ease-out-apple)" : "none",
-        }}
-      />
+    <div className="inline-flex max-w-full items-center rounded-full bg-fill p-[3px]">
       {options.map((option) => (
         <button
           key={option.value}
           type="button"
-          ref={(node) => {
-            refs.current[option.value] = node;
-          }}
           onClick={() => onChange(option.value)}
           className={cn(
-            "relative z-10 h-9 shrink-0 rounded-full px-3.5 text-sm font-medium transition-colors duration-150",
-            value === option.value ? "text-fg" : "text-muted hover:text-fg",
+            "inline-flex h-8 items-center justify-center rounded-full px-3.5 text-sm font-medium leading-none",
+            value === option.value
+              ? "bg-surface text-fg shadow-sm"
+              : "text-muted hover:text-fg",
           )}
         >
           {option.label}

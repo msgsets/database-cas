@@ -43,7 +43,7 @@ export function TypeBadge({
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-full bg-fill px-2.5 py-1 text-caption font-medium tracking-wide text-muted",
+        "inline-flex items-center justify-center gap-1 rounded-full bg-fill px-2.5 py-1 text-caption font-medium leading-none tracking-wide text-muted",
         className,
       )}
     >

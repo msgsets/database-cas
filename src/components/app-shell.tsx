@@ -23,7 +23,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           <Link
             to={left.to}
             className={cn(
-              "font-en text-[17px] tracking-wide",
+              "font-en inline-flex items-center text-[17px] leading-none tracking-wide",
               isNavActive(pathname, left.to) ? "text-fg" : "text-muted",
             )}
           >
@@ -36,7 +36,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 to={item.to}
                 search={item.search}
                 className={cn(
-                  "font-en text-[17px] tracking-wide",
+                  "font-en inline-flex items-center text-[17px] leading-none tracking-wide",
                   isNavActive(pathname, item.to) ? "text-fg" : "text-muted",
                 )}
               >

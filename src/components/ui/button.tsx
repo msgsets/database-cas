@@ -3,14 +3,14 @@ import type { ButtonHTMLAttributes } from "react";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 font-medium tracking-tight transition-[background-color,opacity,transform] duration-100 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:pointer-events-none disabled:opacity-40 active:not-disabled:scale-[0.97]",
+  "inline-flex items-center justify-center gap-2 font-medium leading-none tracking-tight transition-[background-color,opacity,transform] duration-100 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg/20 disabled:pointer-events-none disabled:opacity-40 active:not-disabled:scale-[0.97]",
   {
     variants: {
       variant: {
         primary: "bg-fg text-bg hover:bg-fg/85",
         secondary: "bg-fill text-fg hover:bg-fill-2",
         ghost: "bg-transparent text-fg hover:bg-fill",
-        link: "bg-transparent text-primary hover:opacity-80",
+        link: "bg-transparent text-fg hover:opacity-80",
         danger: "bg-danger text-primary-fg hover:opacity-90",
       },
       size: {

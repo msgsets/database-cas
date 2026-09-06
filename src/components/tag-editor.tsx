@@ -62,7 +62,7 @@ export function TagEditor({ clip }: { clip: Clip }) {
                 isOn ? remove.mutate(tag.id) : add.mutate(tag.name)
               }
               className={cn(
-                "inline-flex h-9 items-center gap-1 rounded-full px-3 text-sm font-medium transition-colors duration-100",
+                "inline-flex h-8 items-center justify-center gap-1 rounded-full px-3 text-sm font-medium leading-none transition-colors duration-100",
                 isOn
                   ? "bg-fg text-bg"
                   : "bg-fill text-muted hover:bg-fill-2 hover:text-fg",
@@ -80,7 +80,7 @@ export function TagEditor({ clip }: { clip: Clip }) {
           onChange={(event) => setName(event.target.value)}
           placeholder="写一个新标签，回车保存"
           maxLength={20}
-          className="h-11 w-full rounded-xl bg-fill px-4 text-base text-fg outline-none placeholder:text-subtle focus:bg-surface focus:shadow-[0_0_0_4px_rgb(0_113_227_/_0.18)]"
+          className="h-11 w-full rounded-xl bg-fill px-4 text-base leading-none text-fg outline-none placeholder:text-subtle focus:bg-surface focus:shadow-[0_0_0_4px_rgb(29_29_31_/_0.08)]"
         />
       </form>
     </div>

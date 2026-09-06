@@ -64,7 +64,7 @@ export function NotesRail({ compact = false }: { compact?: boolean }) {
             type="button"
             onClick={submit}
             disabled={!draft.trim() || create.isPending}
-            className="font-en inline-flex h-11 items-center rounded-full bg-fg px-5 text-[17px] text-bg transition-opacity duration-100 disabled:opacity-30"
+            className="font-en inline-flex h-11 items-center justify-center rounded-full bg-fg px-5 text-[17px] leading-none text-bg transition-opacity duration-100 disabled:opacity-30"
           >
             save
           </button>

@@ -92,7 +92,7 @@ function ClipDetailPage() {
         <Link
           to="/library"
           search={DEFAULT_LIBRARY_SEARCH}
-          className="font-en inline-flex h-11 items-center gap-1 -ml-2 pr-3 text-[15px] text-primary"
+          className="font-en inline-flex h-11 items-center gap-1 -ml-2 pr-3 text-[15px] leading-none text-fg"
         >
           <ChevronLeft className="size-5" strokeWidth={2} />
           DATABASE
@@ -117,7 +117,7 @@ function ClipDetailPage() {
                       href={url}
                       target="_blank"
                       rel="noreferrer"
-                      className="inline-flex h-9 items-center gap-1.5 rounded-full bg-fill px-3 text-sm font-medium text-fg"
+                      className="inline-flex h-8 items-center justify-center gap-1.5 rounded-full bg-fill px-3 text-sm font-medium leading-none text-fg"
                     >
                       打开原链接
                       <ArrowUpRight className="size-3.5" />
@@ -141,7 +141,7 @@ function ClipDetailPage() {
                     <button
                       type="button"
                       onClick={() => setConfirming(true)}
-                      className="h-9 px-3 text-sm font-medium text-danger"
+                      className="inline-flex h-8 items-center justify-center px-3 text-sm font-medium leading-none text-danger"
                     >
                       删除
                     </button>
@@ -172,7 +172,7 @@ function ClipDetailPage() {
                       type="button"
                       onClick={() => saveType.mutate(type)}
                       className={cn(
-                        "inline-flex h-9 items-center gap-1.5 rounded-full px-3 text-sm font-medium transition-colors duration-100",
+                        "inline-flex h-8 items-center justify-center gap-1.5 rounded-full px-3 text-sm font-medium leading-none transition-colors duration-100",
                         clip.type === type
                           ? "bg-fg text-bg"
                           : "bg-fill text-muted hover:bg-fill-2 hover:text-fg",
