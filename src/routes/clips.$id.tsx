@@ -106,12 +106,48 @@ function ClipDetailPage() {
           </div>
         ) : (
           <article className="mt-4 space-y-5">
-            <ClipViewer clip={clip} />
-
             <section className="rounded-2xl bg-surface px-5 py-6 shadow-card sm:px-7">
-              <p className="text-footnote tracking-wide text-subtle">
-                {formatDateTime(clip.created_at)}
-              </p>
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <p className="text-footnote tracking-wide text-subtle">
+                  {formatDateTime(clip.created_at)}
+                </p>
+                <div className="flex items-center gap-2">
+                  {url ? (
+                    <a
+                      href={url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex h-9 items-center gap-1.5 rounded-full bg-fill px-3 text-sm font-medium text-fg"
+                    >
+                      打开原链接
+                      <ArrowUpRight className="size-3.5" />
+                    </a>
+                  ) : null}
+                  {confirming ? (
+                    <div className="flex items-center gap-1">
+                      <Button variant="ghost" size="sm" onClick={() => setConfirming(false)}>
+                        取消
+                      </Button>
+                      <Button
+                        variant="danger"
+                        size="sm"
+                        onClick={() => remove.mutate()}
+                        disabled={remove.isPending}
+                      >
+                        确认删除
+                      </Button>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setConfirming(true)}
+                      className="h-9 px-3 text-sm font-medium text-danger"
+                    >
+                      删除
+                    </button>
+                  )}
+                </div>
+              </div>
               <input
                 value={title}
                 onChange={(event) => setTitle(event.target.value)}
@@ -120,11 +156,8 @@ function ClipDetailPage() {
                     saveTitle.mutate(title.trim());
                   }
                 }}
-                className="title-1 mt-2 w-full bg-transparent text-fg outline-none"
+                className="title-1 mt-3 w-full bg-transparent text-fg outline-none"
               />
-              {clip.site_name ? (
-                <p className="mt-2 text-subhead text-muted">{clip.site_name}</p>
-              ) : null}
             </section>
 
             <section className="overflow-hidden rounded-2xl bg-surface shadow-card">
@@ -160,43 +193,7 @@ function ClipDetailPage() {
               </div>
             </section>
 
-            <div className="flex flex-wrap items-center justify-between gap-3 px-1">
-              {url ? (
-                <a
-                  href={url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex h-11 items-center gap-2 rounded-full bg-fill px-4 text-subhead font-medium text-fg"
-                >
-                  打开原链接
-                  <ArrowUpRight className="size-4" />
-                </a>
-              ) : (
-                <span />
-              )}
-              {confirming ? (
-                <div className="flex items-center gap-2">
-                  <Button variant="ghost" onClick={() => setConfirming(false)}>
-                    取消
-                  </Button>
-                  <Button
-                    variant="danger"
-                    onClick={() => remove.mutate()}
-                    disabled={remove.isPending}
-                  >
-                    确认删除
-                  </Button>
-                </div>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => setConfirming(true)}
-                  className="h-11 px-3 text-subhead font-medium text-danger"
-                >
-                  删除
-                </button>
-              )}
-            </div>
+            <ClipViewer clip={clip} />
           </article>
         )}
       </main>
