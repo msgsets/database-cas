@@ -37,13 +37,13 @@ function Home() {
           <SearchEntry />
           {recent.isPending ? (
             <div className="grid gap-4 sm:grid-cols-2">
-              <div className="h-48 rounded-2xl bg-fill" />
-              <div className="h-48 rounded-2xl bg-fill" />
+              <div className="h-32 rounded-2xl bg-fill" />
+              <div className="h-32 rounded-2xl bg-fill" />
             </div>
           ) : items.length ? (
             <div className="grid gap-4 sm:grid-cols-2">
               {items.slice(0, 4).map((clip) => (
-                <ClipCard key={clip.id} clip={clip} />
+                <ClipCard key={clip.id} clip={clip} compact />
               ))}
             </div>
           ) : (
