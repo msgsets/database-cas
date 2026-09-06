@@ -35,7 +35,7 @@ function Home() {
             <Link
               to="/library"
               search={DEFAULT_LIBRARY_SEARCH}
-              className="font-en text-[15px] text-primary"
+              className="font-en text-[15px] text-fg"
             >
               DATABASE
             </Link>

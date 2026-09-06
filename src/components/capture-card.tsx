@@ -53,7 +53,7 @@ export function CaptureCard() {
           type="button"
           onClick={submit}
           disabled={!canSave}
-          className="font-en h-9 rounded-full px-3.5 text-[17px] text-primary transition-opacity duration-100 disabled:opacity-30"
+          className="font-en h-9 rounded-full px-3.5 text-[17px] text-fg transition-opacity duration-100 disabled:opacity-30"
         >
           {mutation.isPending ? (
             <Loader2 className="size-4 animate-spin" />
