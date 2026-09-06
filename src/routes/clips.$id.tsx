@@ -88,7 +88,7 @@ function ClipDetailPage() {
 
   return (
     <AppShell>
-      <main className="mx-auto w-full max-w-3xl min-w-0">
+      <main className="w-full min-w-0 max-w-3xl">
         <Link
           to="/library"
           search={DEFAULT_LIBRARY_SEARCH}

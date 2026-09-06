@@ -128,7 +128,7 @@ export function FilterBar({ search, onChange }: FilterBarProps) {
               onChange={(event) => setTagName(event.target.value)}
               placeholder="新标签"
               maxLength={20}
-              className="h-9 w-[120px] rounded-full bg-fill px-3 text-sm text-fg outline-none placeholder:text-subtle focus:bg-surface focus:shadow-[0_0_0_4px_rgb(0_113_227_/_0.18)]"
+              className="h-9 w-[120px] rounded-full bg-fill px-3 text-sm text-fg outline-none placeholder:text-subtle focus:bg-surface focus:shadow-[0_0_0_4px_rgb(29_29_31_/_0.08)]"
             />
           </form>
         </div>

@@ -48,7 +48,7 @@ function LibraryPage() {
 
   return (
     <AppShell>
-      <main className="mx-auto w-full max-w-5xl min-w-0">
+      <main className="w-full min-w-0 max-w-5xl">
         <header className="mb-6">
           <h1 className="font-en large-title">DATABASE</h1>
           <p className="mt-2 text-subhead text-muted">
