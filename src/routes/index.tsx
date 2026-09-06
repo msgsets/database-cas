@@ -34,16 +34,13 @@ function Home() {
           <NotesRail compact />
         </div>
 
-        <div className="mt-4">
-          <SearchEntry />
-        </div>
-
         <section className="mt-10">
-          <div className="mb-4 flex justify-end">
+          <div className="mb-4 flex items-center gap-4">
+            <SearchEntry className="min-w-0 flex-1" />
             <Link
               to="/library"
               search={DEFAULT_LIBRARY_SEARCH}
-              className="font-en text-[15px] text-fg"
+              className="font-en flex h-11 shrink-0 items-center text-[15px] text-fg"
             >
               DATABASE
             </Link>
