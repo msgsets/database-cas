@@ -31,7 +31,7 @@ function NotesPage() {
         ) : (
           <>
             <header className="mb-6">
-              <h1 className="font-en large-title">Notes</h1>
+              <h1 className="font-en large-title">NOTES</h1>
             </header>
             <NotesPanel selectedId={selectedId} onSelect={setSelectedId} />
           </>
