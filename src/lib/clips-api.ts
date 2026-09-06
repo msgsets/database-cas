@@ -9,7 +9,7 @@ import {
   type TimeFilter,
   type TypeFilter,
 } from "@/lib/clip-types";
-import { contentRank, headingCount } from "@/lib/article-md";
+import { contentRank, headingCount, imageCount } from "@/lib/article-md";
 
 type ClipRow = {
   id: number;
@@ -176,7 +176,7 @@ export const readSource = createServerFn({ method: "GET" })
       return { ok: true as const, clip };
     }
     const existing = clip.content ?? "";
-    if (headingCount(existing) > 0 && existing.length > 280) {
+    if (headingCount(existing) > 0 && imageCount(existing) > 0 && existing.length > 280) {
       return { ok: true as const, clip };
     }
     const { fetchArticle } = await import("./parse-input.server");
@@ -184,12 +184,17 @@ export const readSource = createServerFn({ method: "GET" })
     if (!article) return { ok: true as const, clip };
     const better =
       contentRank(article.content) > contentRank(existing) ||
-      headingCount(article.content) > headingCount(existing);
+      headingCount(article.content) > headingCount(existing) ||
+      imageCount(article.content) > imageCount(existing);
     if (!better) return { ok: true as const, clip };
     const sql = await getSql();
     await sql.query(
-      `update clips set content = $1, excerpt = coalesce(nullif($2, ''), excerpt) where id = $3`,
-      [article.content, article.excerpt ?? "", clip.id],
+      `update clips
+       set content = $1,
+           excerpt = coalesce(nullif($2, ''), excerpt),
+           image_url = coalesce(nullif($3, ''), image_url)
+       where id = $4`,
+      [article.content, article.excerpt ?? "", article.image_url ?? "", clip.id],
     );
     const next = await loadClip(clip.id);
     return { ok: true as const, clip: next ?? clip };

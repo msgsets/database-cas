@@ -1,4 +1,6 @@
-import { contentRank, headingCount } from "@/lib/article-md";
+import { contentRank, headingCount, imageCount } from "@/lib/article-md";
+import { extractArticle, firstContentImage } from "@/lib/extract-article";
+import { absolutize, decodeHtml, stripTags } from "@/lib/html-utils";
 import type { ClipType } from "@/lib/clip-types";
 
 export type ParsedClip = {
@@ -31,7 +33,8 @@ const VIDEO_HOSTS = [
 ];
 
 const IMAGE_EXT = /\.(png|jpe?g|gif|webp|avif|svg|bmp)(\?.*)?$/i;
-const MAX_BYTES = 1_500_000;
+const MAX_BYTES = 2_500_000;
+const MAX_CONTENT = 80_000;
 
 export async function parseInput(raw: string): Promise<ParsedClip> {
   const input = raw.trim();
@@ -137,29 +140,18 @@ function youtubeThumb(url: URL): string | null {
 }
 
 async function parseUrl(url: URL): Promise<ParsedClip> {
-  const htmlResult = await parseUrlHtml(url);
-  if (!needsReaderFallback(htmlResult, url)) return htmlResult;
+  const htmlPromise = parseUrlHtml(url);
+  const typeHint = detectTypeFromUrl(url);
+  if (typeHint === "image" || typeHint === "video") return htmlPromise;
 
-  const reader = await parseWithReader(url);
+  const [htmlResult, reader] = await Promise.all([htmlPromise, parseWithReader(url)]);
   if (!reader) return htmlResult;
   return mergeParsed(htmlResult, reader);
 }
 
-function needsReaderFallback(parsed: ParsedClip, url: URL): boolean {
-  if (parsed.type === "image" || parsed.type === "video") return false;
-  const hostTitle = url.hostname.replace(/^www\./, "");
-  const titleIsWeak =
-    !parsed.title ||
-    parsed.title === hostTitle ||
-    parsed.title === parsed.site_name;
-  const bodyIsWeak = !parsed.content || parsed.content.length < 120;
-  const structureIsWeak = headingCount(parsed.content) === 0;
-  return titleIsWeak || bodyIsWeak || structureIsWeak;
-}
-
 async function parseUrlHtml(url: URL): Promise<ParsedClip> {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 8000);
+  const timer = setTimeout(() => controller.abort(), 12000);
   try {
     const res = await fetch(url.toString(), {
       signal: controller.signal,
@@ -214,16 +206,22 @@ async function parseUrlHtml(url: URL): Promise<ParsedClip> {
     const ogType = metaContent(html, ["og:type"]) || ld.type;
     const image = absolutize(url, ogImage || ld.image) || youtubeThumb(url);
     const type = detectTypeFromUrl(url, ogType);
-    const extracted = type === "video" || type === "image" ? "" : extractArticle(html);
+    const extracted =
+      type === "video" || type === "image" ? "" : extractArticle(html, url);
     const ldBody = type === "video" || type === "image" ? "" : ld.articleBody || "";
     const article =
-      contentRank(extracted) >= contentRank(ldBody) ? extracted : ldBody;
+      extracted && (headingCount(extracted) > 0 || imageCount(extracted) > 0 || extracted.length >= ldBody.length)
+        ? extracted
+        : extracted.length > 80
+          ? extracted
+          : ldBody;
     const body =
       article.length > 80
         ? article
         : description
           ? description.slice(0, 4000)
           : "";
+    const cover = image || firstContentImage(body);
 
     return {
       kind: "url",
@@ -233,11 +231,11 @@ async function parseUrlHtml(url: URL): Promise<ParsedClip> {
       excerpt: description
         ? description.slice(0, 400)
         : body
-          ? body.replace(/^#{1,4}\s+/gm, "").replace(/\s+/g, " ").trim().slice(0, 180)
+          ? body.replace(/!\[[^\]]*\]\([^)]+\)/g, " ").replace(/^#{1,4}\s+/gm, "").replace(/\s+/g, " ").trim().slice(0, 180)
           : null,
-      content: body ? body.slice(0, 20_000) : null,
+      content: body ? body.slice(0, MAX_CONTENT) : null,
       site_name: siteName.slice(0, 120),
-      image_url: image,
+      image_url: cover,
     };
   } catch {
     return fallbackUrl(url);
@@ -248,13 +246,16 @@ async function parseUrlHtml(url: URL): Promise<ParsedClip> {
 
 async function parseWithReader(url: URL): Promise<Partial<ParsedClip> | null> {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 8000);
+  const timer = setTimeout(() => controller.abort(), 20000);
   try {
     const res = await fetch(`https://r.jina.ai/${url.toString()}`, {
       signal: controller.signal,
       headers: {
         Accept: "text/plain",
-        "X-Timeout": "8",
+        "X-Timeout": "20",
+        "X-Retain-Images": "all",
+        "X-Retain-Links": "all",
+        "X-Remove-Selector": "nav,footer,header,aside,.sidebar,.advert,.ads",
         "User-Agent":
           "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Safari/605.1.15",
       },
@@ -262,6 +263,7 @@ async function parseWithReader(url: URL): Promise<Partial<ParsedClip> | null> {
     if (!res.ok) return null;
     const text = (await res.text()).trim();
     if (text.length < 40) return null;
+    if (/page not found|页面不存在|404 not found/i.test(text.slice(0, 400))) return null;
 
     const title = text.match(/^Title:\s*(.+)$/m)?.[1]?.trim();
     const markdown = text.includes("Markdown Content:")
@@ -276,13 +278,19 @@ async function parseWithReader(url: URL): Promise<Partial<ParsedClip> | null> {
     if (!cleaned && !title) return null;
 
     const excerpt = cleaned
-      ? cleaned.replace(/[#>*`]/g, "").replace(/\s+/g, " ").trim().slice(0, 400)
+      ? cleaned
+          .replace(/!\[[^\]]*\]\([^)]+\)/g, " ")
+          .replace(/[#>*`]/g, "")
+          .replace(/\s+/g, " ")
+          .trim()
+          .slice(0, 400)
       : null;
 
     return {
       title: title?.slice(0, 200),
       excerpt,
-      content: cleaned ? cleaned.slice(0, 20_000) : null,
+      content: cleaned ? cleaned.slice(0, MAX_CONTENT) : null,
+      image_url: firstContentImage(cleaned),
       type: cleaned.length > 80 ? "article" : undefined,
     };
   } catch {
@@ -301,19 +309,20 @@ function mergeParsed(base: ParsedClip, extra: Partial<ParsedClip>): ParsedClip {
         ? extra.title
         : base.title;
   const content =
-    contentRank(extra.content) > contentRank(base.content)
+    extra.content != null && contentRank(extra.content) >= contentRank(base.content)
       ? extra.content
       : base.content;
   const excerpt = extra.excerpt && (!base.excerpt || base.excerpt.length < 40)
     ? extra.excerpt
     : base.excerpt;
+  const image_url = base.image_url || extra.image_url || firstContentImage(content);
   const type =
     extra.type && base.type === "link" && content && content.length > 80
       ? extra.type
       : base.type === "link" && content && content.length > 80
         ? "article"
         : base.type;
-  return { ...base, title, content, excerpt, type };
+  return { ...base, title, content, excerpt, type, image_url };
 }
 
 function readJsonLd(html: string): {
@@ -406,124 +415,19 @@ function metaContent(html: string, names: string[]): string | null {
   return null;
 }
 
-function absolutize(base: URL, value: string | null): string | null {
-  if (!value) return null;
-  try {
-    const resolved = new URL(value, base);
-    if (resolved.protocol === "http:" || resolved.protocol === "https:") {
-      return resolved.toString();
-    }
-  } catch {
-    return null;
-  }
-  return null;
-}
-
-function decodeHtml(value: string): string {
-  return value
-    .replace(/&nbsp;/g, " ")
-    .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(Number(n)))
-    .replace(/&#x([0-9a-f]+);/gi, (_, n) =>
-      String.fromCharCode(parseInt(n, 16)),
-    )
-    .replace(/&quot;/g, "\u0022")
-    .replace(/&#39;|&apos;/g, "\u0027")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&amp;/g, "&");
-}
-
-function stripTags(html: string): string {
-  return decodeHtml(
-    html
-      .replace(/<script[\s\S]*?<\/script>/gi, " ")
-      .replace(/<style[\s\S]*?<\/style>/gi, " ")
-      .replace(/<[^>]+>/g, " ")
-      .replace(/\s+/g, " ")
-      .trim(),
-  );
-}
-
-function isBoilerplate(text: string) {
-  if (text.length > 160) return false;
-  return /cookie|privacy policy|订阅|登录|注册|copyright|accept all|同意并继续/i.test(
-    text,
-  );
-}
-
-export function extractArticle(html: string): string {
-  const cleaned = html
-    .replace(/<script[\s\S]*?<\/script>/gi, " ")
-    .replace(/<style[\s\S]*?<\/style>/gi, " ")
-    .replace(/<noscript[\s\S]*?<\/noscript>/gi, " ")
-    .replace(/<!--[\s\S]*?-->/g, " ")
-    .replace(/<br\s*\/?>/gi, "\n");
-
-  const article =
-    cleaned.match(/<article\b[^>]*>([\s\S]*?)<\/article>/i)?.[1] ||
-    cleaned.match(/<main\b[^>]*>([\s\S]*?)<\/main>/i)?.[1] ||
-    cleaned;
-
-  const blocks: string[] = [];
-  const list: string[] = [];
-  const re = /<(p|h1|h2|h3|h4|h5|li|blockquote)(\s[^>]*)?>([\s\S]*?)<\/\1>/gi;
-
-  function flushList() {
-    if (!list.length) return;
-    blocks.push(list.join("\n"));
-    list.length = 0;
-  }
-
-  let match: RegExpExecArray | null;
-  while ((match = re.exec(article))) {
-    const tag = match[1].toLowerCase();
-    const inner = match[3];
-    const text = stripTags(inner).trim();
-    if (text.length < 2) continue;
-    if (isBoilerplate(text)) continue;
-
-    if (tag === "li") {
-      if (text.length < 2) continue;
-      list.push(`- ${text}`);
-      continue;
-    }
-
-    flushList();
-
-    if (tag === "blockquote") {
-      if (text.length < 8) continue;
-      blocks.push(`> ${text}`);
-      continue;
-    }
-
-    if (tag.startsWith("h") || isBoldHeading(inner, text)) {
-      const level = tag === "h1" || tag === "h2" ? 2 : tag === "h3" ? 3 : 4;
-      blocks.push(`${"#".repeat(level)} ${text}`);
-      continue;
-    }
-
-    if (text.length < 28) continue;
-    blocks.push(text);
-    if (blocks.join("\n\n").length > 18_000) break;
-  }
-  flushList();
-  return blocks.join("\n\n").slice(0, 20_000);
-}
-
-function isBoldHeading(inner: string, text: string): boolean {
-  if (text.length < 2 || text.length > 42) return false;
-  return /^<(strong|b)(\s[^>]*)?>[\s\S]*<\/\1>$/i.test(inner.trim());
-}
-
 export async function fetchArticle(
   urlString: string,
-): Promise<{ content: string; excerpt: string | null } | null> {
+): Promise<{ content: string; excerpt: string | null; image_url: string | null } | null> {
   try {
     const url = new URL(urlString);
     if (url.protocol !== "http:" && url.protocol !== "https:") return null;
     const parsed = await parseUrl(url);
     if (!parsed.content) return null;
-    return { content: parsed.content, excerpt: parsed.excerpt };
+    return {
+      content: parsed.content,
+      excerpt: parsed.excerpt,
+      image_url: parsed.image_url,
+    };
   } catch {
     return null;
   }

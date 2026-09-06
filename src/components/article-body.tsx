@@ -30,7 +30,7 @@ function ArticleBlockView({ block, first }: { block: ArticleBlock; first: boolea
       <Tag
         className={cn(
           "text-fg tracking-tight",
-          first ? "mt-0" : block.level <= 2 ? "mt-8" : "mt-6",
+          first ? "mt-0" : block.level <= 2 ? "mt-9" : "mt-7",
           block.level <= 2
             ? "mb-3 text-[22px] font-semibold leading-snug"
             : "mb-2 text-[18px] font-semibold leading-snug",
@@ -74,9 +74,17 @@ function ArticleBlockView({ block, first }: { block: ArticleBlock; first: boolea
   }
 
   if (block.type === "img") {
+    const caption = usableCaption(block.alt);
     return (
-      <figure className={cn("overflow-hidden rounded-xl bg-fill", first ? "mt-0" : "mt-6")}>
-        <img src={block.src} alt={block.alt} className="w-full object-cover" />
+      <figure className={cn(first ? "mt-0" : "mt-6", "mb-2")}>
+        <div className="overflow-hidden rounded-xl bg-fill">
+          <img src={block.src} alt={caption || ""} className="mx-auto max-h-[720px] w-full object-contain" />
+        </div>
+        {caption ? (
+          <figcaption className="mt-2 text-center text-[13px] leading-relaxed text-muted">
+            {caption}
+          </figcaption>
+        ) : null}
       </figure>
     );
   }
@@ -86,6 +94,14 @@ function ArticleBlockView({ block, first }: { block: ArticleBlock; first: boolea
       <Inline text={block.text} />
     </p>
   );
+}
+
+function usableCaption(alt: string): string {
+  const value = alt.replace(/^Image\s*\d+\s*:?\s*/i, "").trim();
+  if (!value) return "";
+  if (/^(image|img|photo|图片)\s*\d*$/i.test(value)) return "";
+  if (/\.(png|jpe?g|gif|webp|avif)$/i.test(value)) return "";
+  return value;
 }
 
 function Inline({ text }: { text: string }) {
