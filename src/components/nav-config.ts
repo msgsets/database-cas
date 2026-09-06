@@ -8,7 +8,7 @@ export type NavItem = {
 
 export const NAV_ITEMS: NavItem[] = [
   { to: "/", label: "HOME" },
-  { to: "/notes", label: "Notes" },
+  { to: "/notes", label: "NOTES" },
   { to: "/library", label: "DATABASE", search: DEFAULT_LIBRARY_SEARCH },
 ];
 
