@@ -33,10 +33,8 @@ function Home() {
           <NotesRail compact />
         </div>
 
-        <section className="mt-10">
-          <div className="mb-4">
-            <SearchEntry />
-          </div>
+        <section className="mt-4 space-y-4">
+          <SearchEntry />
           {recent.isPending ? (
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="h-48 rounded-2xl bg-fill" />
