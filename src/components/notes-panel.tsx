@@ -6,8 +6,21 @@ import { useEffect, useState, type KeyboardEvent } from "react";
 import { SwipeRow } from "@/components/swipe-row";
 import { haptic } from "@/lib/apple-motion";
 import { notePreview, noteTitle, type Note } from "@/lib/clip-types";
-import { createNote, deleteNote, listNotes, updateNote } from "@/lib/notes-api";
+import {
+  createNote,
+  deleteNote,
+  listDeletedNotes,
+  listNotes,
+  purgeNote,
+  restoreNote,
+  updateNote,
+} from "@/lib/notes-api";
 import { cn } from "@/lib/utils";
+
+function invalidateNotes(qc: ReturnType<typeof useQueryClient>) {
+  qc.invalidateQueries({ queryKey: ["notes"] });
+  qc.invalidateQueries({ queryKey: ["notes", "deleted"] });
+}
 
 export function NotesPanel({
   selectedId,
@@ -18,7 +31,12 @@ export function NotesPanel({
 }) {
   const qc = useQueryClient();
   const notesQuery = useQuery({ queryKey: ["notes"], queryFn: () => listNotes() });
+  const deletedQuery = useQuery({
+    queryKey: ["notes", "deleted"],
+    queryFn: () => listDeletedNotes(),
+  });
   const notes = notesQuery.data ?? [];
+  const deleted = deletedQuery.data ?? [];
   const pinned = notes.filter((note) => note.pinned);
   const rest = notes.filter((note) => !note.pinned);
   const [draft, setDraft] = useState("");
@@ -30,7 +48,7 @@ export function NotesPanel({
       if (!result.ok) return;
       haptic(10);
       setDraft("");
-      qc.invalidateQueries({ queryKey: ["notes"] });
+      invalidateNotes(qc);
       if (result.note) {
         setOpenId(result.note.id);
         onSelect?.(result.note.id);
@@ -42,7 +60,7 @@ export function NotesPanel({
     mutationFn: (input: { id: number; pinned: boolean }) => updateNote({ data: input }),
     onSuccess: () => {
       haptic(8);
-      qc.invalidateQueries({ queryKey: ["notes"] });
+      invalidateNotes(qc);
     },
   });
 
@@ -52,9 +70,30 @@ export function NotesPanel({
       qc.setQueryData<Note[]>(["notes"], (current) =>
         (current ?? []).filter((note) => note.id !== id),
       );
-      qc.invalidateQueries({ queryKey: ["notes"] });
+      invalidateNotes(qc);
       if (openId === id) setOpenId(null);
       if (selectedId === id) onSelect?.(null);
+    },
+  });
+
+  const restore = useMutation({
+    mutationFn: (id: number) => restoreNote({ data: { id } }),
+    onSuccess: (_result, id) => {
+      haptic(10);
+      qc.setQueryData<Note[]>(["notes", "deleted"], (current) =>
+        (current ?? []).filter((note) => note.id !== id),
+      );
+      invalidateNotes(qc);
+    },
+  });
+
+  const purge = useMutation({
+    mutationFn: (id: number) => purgeNote({ data: { id } }),
+    onSuccess: (_result, id) => {
+      qc.setQueryData<Note[]>(["notes", "deleted"], (current) =>
+        (current ?? []).filter((note) => note.id !== id),
+      );
+      invalidateNotes(qc);
     },
   });
 
@@ -102,7 +141,7 @@ export function NotesPanel({
       </div>
 
       {notes.length === 0 ? (
-        <p className="px-4 py-12 text-center text-subhead text-muted">还没有笔记</p>
+        <p className="px-4 py-8 text-center text-subhead text-muted">还没有笔记</p>
       ) : (
         <ul className="flex flex-col gap-3">
           {pinned.concat(rest).map((note) => (
@@ -118,6 +157,25 @@ export function NotesPanel({
           ))}
         </ul>
       )}
+
+      <section className="mt-5">
+        <h2 className="font-en mb-3 text-[22px] leading-none tracking-wide text-fg">DELETED</h2>
+        {deleted.length === 0 ? (
+          <p className="px-1 py-2 text-footnote text-muted">左滑删除的笔记会出现在这里</p>
+        ) : (
+          <ul className="flex flex-col gap-3">
+            {deleted.map((note) => (
+              <li key={note.id}>
+                <DeletedRow
+                  note={note}
+                  onRestore={() => restore.mutate(note.id)}
+                  onPurge={() => purge.mutate(note.id)}
+                />
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
     </div>
   );
 }
@@ -146,7 +204,7 @@ function NoteRow({
   const save = useMutation({
     mutationFn: (next: string) => updateNote({ data: { id: note.id, body: next } }),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["notes"] });
+      invalidateNotes(qc);
     },
   });
 
@@ -207,6 +265,39 @@ function NoteRow({
             </button>
           )}
         </div>
+      </div>
+    </SwipeRow>
+  );
+}
+
+function DeletedRow({
+  note,
+  onRestore,
+  onPurge,
+}: {
+  note: Note;
+  onRestore: () => void;
+  onPurge: () => void;
+}) {
+  const preview = notePreview(note.body);
+  return (
+    <SwipeRow onDelete={onPurge}>
+      <div className="overflow-hidden rounded-2xl bg-surface shadow-card">
+        <button
+          type="button"
+          onClick={onRestore}
+          className="w-full px-4 py-3 text-left"
+        >
+          <p className="truncate text-subhead font-semibold tracking-tight text-muted">
+            {noteTitle(note.body)}
+          </p>
+          {preview ? (
+            <p className="mt-0.5 line-clamp-2 text-footnote leading-relaxed text-subtle">
+              {preview}
+            </p>
+          ) : null}
+          <p className="mt-1 text-[11px] leading-none text-subtle">点击恢复</p>
+        </button>
       </div>
     </SwipeRow>
   );

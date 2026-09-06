@@ -8,12 +8,20 @@ type NoteRow = {
   pinned: boolean;
   created_at: unknown;
   updated_at: unknown;
+  deleted_at: unknown;
 };
+
+const NOTE_COLS = "id, body, pinned, created_at, updated_at, deleted_at";
 
 function toIso(value: unknown): string {
   if (value instanceof Date) return value.toISOString();
   if (typeof value === "string") return value;
   return new Date().toISOString();
+}
+
+function toIsoOrNull(value: unknown): string | null {
+  if (value == null) return null;
+  return toIso(value);
 }
 
 function mapNote(row: NoteRow): Note {
@@ -23,6 +31,7 @@ function mapNote(row: NoteRow): Note {
     pinned: Boolean(row.pinned),
     created_at: toIso(row.created_at),
     updated_at: toIso(row.updated_at),
+    deleted_at: toIsoOrNull(row.deleted_at),
   };
 }
 
@@ -31,7 +40,7 @@ export const getNote = createServerFn({ method: "GET" })
   .handler(async ({ data }) => {
     const sql = await getSql();
     const rows = await sql.query<NoteRow>(
-      `select id, body, pinned, created_at, updated_at from notes where id = $1`,
+      `select ${NOTE_COLS} from notes where id = $1 and deleted_at is null`,
       [data.id],
     );
     return rows[0] ? mapNote(rows[0]) : null;
@@ -40,13 +49,24 @@ export const getNote = createServerFn({ method: "GET" })
 export const listNotes = createServerFn({ method: "GET" }).handler(async () => {
   const sql = await getSql();
   const rows = await sql.query<NoteRow>(
-    `select id, body, pinned, created_at, updated_at
+    `select ${NOTE_COLS}
      from notes
+     where deleted_at is null
      order by pinned desc, updated_at desc`,
   );
   return rows.map(mapNote);
 });
 
+export const listDeletedNotes = createServerFn({ method: "GET" }).handler(async () => {
+  const sql = await getSql();
+  const rows = await sql.query<NoteRow>(
+    `select ${NOTE_COLS}
+     from notes
+     where deleted_at is not null
+     order by deleted_at desc`,
+  );
+  return rows.map(mapNote);
+});
 
 export const createNote = createServerFn({ method: "POST" })
   .validator((input: { body: string }) => input)
@@ -56,7 +76,7 @@ export const createNote = createServerFn({ method: "POST" })
     const sql = await getSql();
     const rows = await sql.query<NoteRow>(
       `insert into notes (body) values ($1)
-       returning id, body, pinned, created_at, updated_at`,
+       returning ${NOTE_COLS}`,
       [body.slice(0, 8000)],
     );
     return { ok: true as const, note: mapNote(rows[0]) };
@@ -83,8 +103,8 @@ export const updateNote = createServerFn({ method: "POST" })
     const rows = await sql.query<NoteRow>(
       `update notes
        set ${sets.join(", ")}
-       where id = $${i}
-       returning id, body, pinned, created_at, updated_at`,
+       where id = $${i} and deleted_at is null
+       returning ${NOTE_COLS}`,
       vals,
     );
     if (!rows[0]) return { ok: false as const, error: "未找到" };
@@ -95,6 +115,34 @@ export const deleteNote = createServerFn({ method: "POST" })
   .validator((input: { id: number }) => input)
   .handler(async ({ data }) => {
     const sql = await getSql();
-    await sql.query(`delete from notes where id = $1`, [data.id]);
+    await sql.query(
+      `update notes
+       set deleted_at = now(), pinned = false, updated_at = now()
+       where id = $1 and deleted_at is null`,
+      [data.id],
+    );
+    return { ok: true as const };
+  });
+
+export const restoreNote = createServerFn({ method: "POST" })
+  .validator((input: { id: number }) => input)
+  .handler(async ({ data }) => {
+    const sql = await getSql();
+    const rows = await sql.query<NoteRow>(
+      `update notes
+       set deleted_at = null, updated_at = now()
+       where id = $1 and deleted_at is not null
+       returning ${NOTE_COLS}`,
+      [data.id],
+    );
+    if (!rows[0]) return { ok: false as const, error: "未找到" };
+    return { ok: true as const, note: mapNote(rows[0]) };
+  });
+
+export const purgeNote = createServerFn({ method: "POST" })
+  .validator((input: { id: number }) => input)
+  .handler(async ({ data }) => {
+    const sql = await getSql();
+    await sql.query(`delete from notes where id = $1 and deleted_at is not null`, [data.id]);
     return { ok: true as const };
   });

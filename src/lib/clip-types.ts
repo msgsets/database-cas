@@ -61,6 +61,7 @@ export type Note = {
   pinned: boolean;
   created_at: string;
   updated_at: string;
+  deleted_at: string | null;
 };
 
 export function isClipType(value: unknown): value is ClipType {

@@ -43,7 +43,7 @@ export function NotesRail({ compact = false }: { compact?: boolean }) {
         (current ?? []).filter((note) => note.id !== id),
       );
       qc.invalidateQueries({ queryKey: ["notes"] });
-      if (openId === id) setOpenId(null);
+      qc.invalidateQueries({ queryKey: ["notes", "deleted"] });
     },
   });
 
