@@ -255,7 +255,8 @@ async function parseWithReader(url: URL): Promise<Partial<ParsedClip> | null> {
         "X-Timeout": "20",
         "X-Retain-Images": "all",
         "X-Retain-Links": "all",
-        "X-Remove-Selector": "nav,footer,header,aside,.sidebar,.advert,.ads",
+        "X-Remove-Selector":
+          "nav,footer,header,aside,.sidebar,.advert,.ads,.avatar,.author,.byline,.user-info,.profile,.article-meta,.post-meta,.comment,.comments",
         "User-Agent":
           "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Safari/605.1.15",
       },
@@ -308,8 +309,13 @@ function mergeParsed(base: ParsedClip, extra: Partial<ParsedClip>): ParsedClip {
       : extra.title && (base.title === host || !base.title)
         ? extra.title
         : base.title;
-  const content =
-    extra.content != null && contentRank(extra.content) >= contentRank(base.content)
+  const htmlReady = headingCount(base.content) > 0 && imageCount(base.content) > 0;
+  const readerReady = headingCount(extra.content) > 0 && imageCount(extra.content) > 0;
+  const content = htmlReady
+    ? readerReady && imageCount(extra.content) >= imageCount(base.content) + 3
+      ? extra.content ?? base.content
+      : base.content
+    : extra.content != null && contentRank(extra.content) > contentRank(base.content)
       ? extra.content
       : base.content;
   const excerpt = extra.excerpt && (!base.excerpt || base.excerpt.length < 40)

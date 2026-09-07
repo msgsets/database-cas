@@ -11,7 +11,7 @@ export function ArticleBody({
   markdown: string;
   title?: string;
 }) {
-  const blocks = dropTitleHeading(parseArticle(markdown), title ?? "");
+  const blocks = dropTitleHeading(parseArticle(markdown, title ?? ""), title ?? "");
   if (!blocks.length) return null;
 
   return (
@@ -78,7 +78,11 @@ function ArticleBlockView({ block, first }: { block: ArticleBlock; first: boolea
     return (
       <figure className={cn(first ? "mt-0" : "mt-6", "mb-2")}>
         <div className="overflow-hidden rounded-xl bg-fill">
-          <img src={block.src} alt={caption || ""} className="mx-auto max-h-[720px] w-full object-contain" />
+          <img
+            src={block.src}
+            alt={caption || ""}
+            className="mx-auto h-auto max-h-[720px] max-w-full w-auto"
+          />
         </div>
         {caption ? (
           <figcaption className="mt-2 text-center text-[13px] leading-relaxed text-muted">
@@ -101,6 +105,7 @@ function usableCaption(alt: string): string {
   if (!value) return "";
   if (/^(image|img|photo|图片)\s*\d*$/i.test(value)) return "";
   if (/\.(png|jpe?g|gif|webp|avif)$/i.test(value)) return "";
+  if (value.length > 60) return "";
   return value;
 }
 

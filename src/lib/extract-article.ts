@@ -1,8 +1,7 @@
+import { isJunkImageUrl } from "@/lib/article-md";
 import { absolutize, attr, stripTags } from "@/lib/html-utils";
 
 const MAX_CONTENT = 80_000;
-const JUNK_IMAGE =
-  /avatar|sprite|icon|logo|emoji|pixel|spacer|1x1|tracking|badge|button|qrcode|qr[_-]?code|share[_-]?(wx|weibo)|loading\.gif|adsct|cookielaw|doubleclick|facebook\.com\/tr|googletagmanager|crop\/(?:1\d{2}|[1-9]\d)x(?:1\d{2}|[1-9]\d)(?:[/?]|$)|thumbnail\/!(?:1\d{2}|[1-9]\d)x/i;
 
 export function extractArticle(html: string, base: URL): string {
   const cleaned = html
@@ -91,8 +90,13 @@ export function extractArticle(html: string, base: URL): string {
 
 export function firstContentImage(markdown: string | null | undefined): string | null {
   if (!markdown) return null;
-  const match = markdown.match(/!\[[^\]]*\]\((https?:[^)\s]+)\)/);
-  return match?.[1] ?? null;
+  const re = /!\[[^\]]*\]\((https?:[^)\s]+)\)/g;
+  let match: RegExpExecArray | null;
+  while ((match = re.exec(markdown))) {
+    const src = match[1]!;
+    if (!isJunkImageUrl(src)) return src;
+  }
+  return null;
 }
 
 function pickRoot(html: string): string {
@@ -211,10 +215,25 @@ function largestSrcset(srcset: string | null): string | null {
 }
 
 function isJunkImage(url: string, tag: string): boolean {
-  if (JUNK_IMAGE.test(url)) return true;
+  const blob = `${tag} ${url}`;
+  if (
+    /avatar|author[_-]?pic|author-avatar|user-avatar|byline|headimg|qlogo|profile.?pic|nickname/i.test(
+      blob,
+    )
+  ) {
+    return true;
+  }
+  if (
+    /avatar|headimg|qlogo\.cn|user[_-]?pic|profile[_-]?images?|sprite|icon|logo|emoji|pixel|spacer|1x1|tracking|badge|qrcode|adsct|cookielaw|doubleclick|crop\/(?:[1-9]\d|1\d{2}|2\d{2})x(?:[1-9]\d|1\d{2}|2\d{2})(?:[/?]|$)|(?:72|64|48|40|32|96|100|120|132|160)x(?:72|64|48|40|32|96|100|120|132|160)/i.test(
+      url,
+    )
+  ) {
+    return true;
+  }
   const width = Number(attr(tag, "width") || 0);
   const height = Number(attr(tag, "height") || 0);
-  if ((width && width < 80) || (height && height < 80)) return true;
+  if ((width && width < 120) || (height && height < 120)) return true;
+  if (width && height && Math.abs(width - height) <= 8 && width <= 200) return true;
   return false;
 }
 
